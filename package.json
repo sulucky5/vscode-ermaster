@@ -1,0 +1,92 @@
+{
+  "name": "ermaster-vscode",
+  "displayName": "ERMaster for VS Code",
+  "description": "A modern ER Diagram editor for VS Code compatible with Eclipse ERMaster (.erm)",
+  "version": "0.1.28",
+  "publisher": "j-lab",
+  "license": "Apache-2.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Other"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "ermaster",
+          "title": "ERMaster",
+          "icon": "media/ermaster.svg"
+        }
+      ]
+    },
+    "views": {
+      "ermaster": [
+        {
+          "type": "webview",
+          "id": "ermaster.paletteView",
+          "name": "도구"
+        },
+        {
+          "type": "webview",
+          "id": "ermaster.viewView",
+          "name": "보기"
+        },
+        {
+          "type": "webview",
+          "id": "ermaster.menuView",
+          "name": "메뉴"
+        },
+        {
+          "type": "webview",
+          "id": "ermaster.outlineView",
+          "name": "Outline"
+        }
+      ]
+    },
+    "customEditors": [
+      {
+        "viewType": "ermaster.editor",
+        "displayName": "ERMaster ERD Editor",
+        "selector": [
+          {
+            "filenamePattern": "*.erm"
+          },
+          {
+            "filenamePattern": "*.erd"
+          }
+        ],
+        "priority": "default"
+      }
+    ],
+    "commands": [
+      {
+        "command": "ermaster.newDiagram",
+        "title": "ERMaster: Create New ER Diagram (.erm)",
+        "category": "ERMaster"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm version patch --no-git-tag-version && npm run build",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "build:webview": "cd webview && npm run build",
+    "build:extension": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "build:jdbc": "javac -encoding UTF-8 -cp lib/poi-3.7-20101029.jar -d dist/jdbc jdbc/JdbcReverseEngineer.java jdbc/ExcelTemplateExporter.java",
+    "build": "npm run build:webview && npm run build:extension && npm run build:jdbc",
+    "dev:webview": "cd webview && npm run dev"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^4.3.4"
+  }
+}
