@@ -1,4 +1,16 @@
-import React, { useMemo, useCallback, useRef, useEffect } from 'react';
+import React, { useMemo, useCallback, useRef, useEffect, useState } from 'react';
+import {
+  Plus,
+  StickyNote,
+  FileUp,
+  Server,
+  Layers,
+  Table,
+  Search,
+  Code,
+  Download,
+  Printer
+} from 'lucide-react';
 import {
   ReactFlow,
   Background,
@@ -279,6 +291,34 @@ const ERDCanvasInner: React.FC = () => {
   const deleteNodesByIds = useERDStore((state) => state.deleteNodesByIds);
   const addNoteConnection = useERDStore((state) => state.addNoteConnection);
   const deleteNoteConnection = useERDStore((state) => state.deleteNoteConnection);
+  const openImportFileModal = useERDStore((state) => state.openImportFileModal);
+  const openImportDBModal = useERDStore((state) => state.openImportDBModal);
+  const openModelManager = useERDStore((state) => state.openModelManager);
+  const openEditAllModal = useERDStore((state) => state.openEditAllModal);
+  const openSearchModal = useERDStore((state) => state.openSearchModal);
+  const openDDLModal = useERDStore((state) => state.openDDLModal);
+  const openExportModal = useERDStore((state) => state.openExportModal);
+
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    flowX: number;
+    flowY: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!contextMenu) return;
+    const close = () => setContextMenu(null);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close();
+    };
+    window.addEventListener('click', close);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('click', close);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [contextMenu]);
 
   const { screenToFlowPosition, setCenter } = useReactFlow();
   const focusNodeId = useERDStore((state) => state.focusNodeId);
@@ -826,9 +866,29 @@ const ERDCanvasInner: React.FC = () => {
     activeTool === 'category' ||
     activeTool === 'image';
 
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const pos = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+      const menuW = 220;
+      const menuH = 340;
+      const x = Math.min(e.clientX, Math.max(8, window.innerWidth - menuW - 8));
+      const y = Math.min(e.clientY, Math.max(8, window.innerHeight - menuH - 8));
+      setContextMenu({
+        x,
+        y,
+        flowX: Math.round(pos.x),
+        flowY: Math.round(pos.y)
+      });
+    },
+    [screenToFlowPosition]
+  );
+
   return (
     <div
       ref={canvasContainerRef}
+      onContextMenu={handleContextMenu}
       className={activeTool === 'pan' ? 'erd-pan-mode' : undefined}
       style={{
         width: '100%',
@@ -854,7 +914,7 @@ const ERDCanvasInner: React.FC = () => {
         nodesDraggable={!diagram.lockEdit && activeTool !== 'pan'}
         nodesConnectable={!diagram.lockEdit && activeTool !== 'pan'}
         edgesReconnectable={!diagram.lockEdit && activeTool !== 'pan'}
-        panOnDrag={activeTool === 'select' ? [1, 2] : true}
+        panOnDrag={activeTool === 'pan' ? true : [1]}
         selectionOnDrag={activeTool === 'select'}
         selectionMode={SelectionMode.Partial}
         onNodesChange={handleNodesChange}
@@ -891,6 +951,135 @@ const ERDCanvasInner: React.FC = () => {
         />
       </ReactFlow>
       <CanvasScrollbars nodes={nodes} containerRef={canvasContainerRef} />
+
+      {contextMenu && (
+        <div
+          className="no-print"
+          onClick={(e) => e.stopPropagation()}
+          onContextMenu={(e) => e.preventDefault()}
+          style={{
+            position: 'fixed',
+            top: contextMenu.y,
+            left: contextMenu.x,
+            width: 220,
+            zIndex: 1200,
+            backgroundColor: 'var(--vscode-menu-background, #252538)',
+            color: 'var(--vscode-menu-foreground, #cdd6f4)',
+            border: '1px solid var(--vscode-menu-border, var(--border-color))',
+            borderRadius: '8px',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
+            padding: '6px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '2px',
+            fontSize: '12px'
+          }}
+        >
+          {[
+            {
+              label: '새 테이블 추가',
+              icon: Plus,
+              disabled: Boolean(diagram.lockEdit),
+              onClick: () => addTable({ x: contextMenu.flowX, y: contextMenu.flowY })
+            },
+            {
+              label: '새 메모 추가',
+              icon: StickyNote,
+              disabled: Boolean(diagram.lockEdit),
+              onClick: () => addNote({ x: contextMenu.flowX, y: contextMenu.flowY })
+            },
+            { divider: true as const },
+            {
+              label: '파일 가져오기 (.erm/.sql)',
+              icon: FileUp,
+              onClick: () => openImportFileModal()
+            },
+            {
+              label: 'DB 가져오기 (JDBC)',
+              icon: Server,
+              onClick: () => openImportDBModal()
+            },
+            { divider: true as const },
+            {
+              label: '모델 관리',
+              icon: Layers,
+              onClick: () => openModelManager('dictionary')
+            },
+            {
+              label: '모든 속성 일괄 편집',
+              icon: Table,
+              disabled: Boolean(diagram.lockEdit),
+              onClick: () => openEditAllModal()
+            },
+            {
+              label: '검색 (Ctrl+F)',
+              icon: Search,
+              onClick: () => openSearchModal()
+            },
+            { divider: true as const },
+            {
+              label: 'DDL 미리보기 / 생성',
+              icon: Code,
+              onClick: () => openDDLModal()
+            },
+            {
+              label: '내보내기 (Export)',
+              icon: Download,
+              onClick: () => openExportModal()
+            },
+            {
+              label: '인쇄',
+              icon: Printer,
+              onClick: () => window.print()
+            }
+          ].map((item, idx) => {
+            if ('divider' in item) {
+              return (
+                <div
+                  key={`div-${idx}`}
+                  style={{
+                    height: '1px',
+                    backgroundColor: 'var(--vscode-menu-separatorBackground, var(--border-color))',
+                    margin: '4px 2px'
+                  }}
+                />
+              );
+            }
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.label}
+                type="button"
+                disabled={item.disabled}
+                onClick={() => {
+                  if (item.disabled) return;
+                  setContextMenu(null);
+                  item.onClick();
+                }}
+                className="erd-context-menu-item"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  width: '100%',
+                  padding: '6px 8px',
+                  border: 'none',
+                  borderRadius: '5px',
+                  backgroundColor: 'transparent',
+                  color: 'inherit',
+                  fontSize: '12px',
+                  textAlign: 'left',
+                  opacity: item.disabled ? 0.45 : 1,
+                  cursor: item.disabled ? 'not-allowed' : 'pointer'
+                }}
+              >
+                <Icon size={14} />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

@@ -54,6 +54,11 @@ body, html, #root {
   background-color: rgba(186, 194, 222, 0.75) !important;
 }
 
+.erd-context-menu-item:not(:disabled):hover {
+  background-color: var(--vscode-menu-selectionBackground, rgba(137, 180, 250, 0.18)) !important;
+  color: var(--vscode-menu-selectionForeground, #cdd6f4) !important;
+}
+
 .react-flow__background {
   background-color: var(--bg-primary);
 }

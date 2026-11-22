@@ -11,11 +11,10 @@ export function activate(context: vscode.ExtensionContext) {
   };
   const paletteViewProvider = new PaletteViewProvider(context, handleSidebarAction, 'palette');
   const viewSettingsProvider = new PaletteViewProvider(context, handleSidebarAction, 'view');
-  const menuViewProvider = new PaletteViewProvider(context, handleSidebarAction, 'menu');
   const outlineViewProvider = new OutlineViewProvider(context, handleSidebarAction);
   editorProvider = new ERMEditorProvider(
     context,
-    [paletteViewProvider, viewSettingsProvider, menuViewProvider],
+    [paletteViewProvider, viewSettingsProvider],
     outlineViewProvider
   );
 
@@ -32,15 +31,6 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window.registerWebviewViewProvider(
       'ermaster.viewView',
       viewSettingsProvider,
-      {
-        webviewOptions: {
-          retainContextWhenHidden: true
-        }
-      }
-    ),
-    vscode.window.registerWebviewViewProvider(
-      'ermaster.menuView',
-      menuViewProvider,
       {
         webviewOptions: {
           retainContextWhenHidden: true

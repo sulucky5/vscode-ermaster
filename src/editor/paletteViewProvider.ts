@@ -65,7 +65,7 @@ export interface SidebarActionMessage {
 export function buildWebviewHtml(
   webview: vscode.Webview,
   extensionPath: string,
-  viewMode: 'editor' | 'palette' | 'view' | 'menu' | 'outline'
+  viewMode: 'editor' | 'palette' | 'view' | 'outline'
 ): string {
   const webviewDist = path.join(extensionPath, 'dist', 'webview');
   const indexPath = path.join(webviewDist, 'index.html');
@@ -109,7 +109,7 @@ export class PaletteViewProvider implements vscode.WebviewViewProvider {
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly onAction: (action: SidebarActionMessage) => void,
-    private readonly webviewMode: 'palette' | 'view' | 'menu' = 'palette'
+    private readonly webviewMode: 'palette' | 'view' = 'palette'
   ) {}
 
   public resolveWebviewView(

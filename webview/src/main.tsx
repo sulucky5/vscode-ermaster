@@ -14,8 +14,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <Palette section="tools" />
     ) : viewMode === 'view' ? (
       <Palette section="view" />
-    ) : viewMode === 'menu' ? (
-      <Palette section="actions" />
     ) : viewMode === 'outline' ? (
       <OutlinePanel />
     ) : (
