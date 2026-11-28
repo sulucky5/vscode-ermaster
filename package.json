@@ -97,7 +97,8 @@
     "dev:webview": "cd webview && npm run dev",
     "publish:ovsx": "node scripts/publish.mjs ovsx",
     "publish:vscode": "node scripts/publish.mjs vscode",
-    "publish:all": "node scripts/publish.mjs all"
+    "publish:all": "node scripts/publish.mjs all",
+    "release": "node scripts/release.mjs"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
