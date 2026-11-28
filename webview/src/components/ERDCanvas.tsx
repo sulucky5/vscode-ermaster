@@ -323,7 +323,7 @@ const ERDCanvasInner: React.FC = () => {
     };
   }, [contextMenu]);
 
-  const { screenToFlowPosition, setCenter } = useReactFlow();
+  const { screenToFlowPosition, setCenter, fitView } = useReactFlow();
   const focusNodeId = useERDStore((state) => state.focusNodeId);
   const requestFocusNode = useERDStore((state) => state.requestFocusNode);
   const selectAllTrigger = useERDStore((state) => state.selectAllTrigger);
@@ -432,18 +432,23 @@ const ERDCanvasInner: React.FC = () => {
         data: { note }
       }));
 
-    const imageNodes: Node[] = (diagram.images || []).map((image: ERImage) => ({
-      id: image.id,
-      type: 'imageNode',
-      position: { x: image.x, y: image.y },
-      data: { image }
-    }));
+    const imageNodes: Node[] = (diagram.images || [])
+      .filter((img) => !visibleIds || visibleIds.has(img.id))
+      .map((image: ERImage) => ({
+        id: image.id,
+        type: 'imageNode',
+        position: { x: image.x, y: image.y },
+        data: { image }
+      }));
 
+    const mpId = diagram.modelProperties?.id || '__model_properties__';
     const mpNodes: Node[] =
-      diagram.modelProperties && diagram.modelProperties.display
+      diagram.modelProperties &&
+      diagram.modelProperties.display &&
+      (!visibleIds || visibleIds.has(mpId))
         ? [
             {
-              id: diagram.modelProperties.id || '__model_properties__',
+              id: mpId,
               type: 'modelPropertiesNode',
               position: { x: diagram.modelProperties.x, y: diagram.modelProperties.y },
               data: { modelProperties: diagram.modelProperties }
@@ -531,16 +536,40 @@ const ERDCanvasInner: React.FC = () => {
   const openRelationModal = useERDStore((state) => state.openRelationModal);
   const reconnectRelation = useERDStore((state) => state.reconnectRelation);
 
-  // Convert Relations & CommentConnections to React Flow Edges
+  const prevSelectedCategoryIdRef = useRef<string | null | undefined>(undefined);
+  const selectedCategoryId = diagram.categorySettings?.selectedCategoryId ?? null;
+  useEffect(() => {
+    if (prevSelectedCategoryIdRef.current === undefined) {
+      prevSelectedCategoryIdRef.current = selectedCategoryId;
+      return;
+    }
+    if (prevSelectedCategoryIdRef.current !== selectedCategoryId) {
+      prevSelectedCategoryIdRef.current = selectedCategoryId;
+      const timer = window.setTimeout(() => {
+        fitView({ padding: 0.15, duration: 220 });
+      }, 40);
+      return () => window.clearTimeout(timer);
+    }
+  }, [selectedCategoryId, fitView]);
+
+  const visibleNodeIdSet = useMemo(
+    () => new Set(computedNodes.map((n) => n.id)),
+    [computedNodes]
+  );
+
+  // Convert Relations & CommentConnections to React Flow Edges (filtered to visible nodes)
   const edges: Edge[] = useMemo(() => {
+    const visibleRelations = diagram.relations.filter(
+      (r) => visibleNodeIdSet.has(r.sourceTableId) && visibleNodeIdSet.has(r.targetTableId)
+    );
     const pairGroups: Record<string, string[]> = {};
-    for (const r of diagram.relations) {
+    for (const r of visibleRelations) {
       const key = [r.sourceTableId, r.targetTableId].sort().join(':::');
       if (!pairGroups[key]) pairGroups[key] = [];
       pairGroups[key].push(r.id);
     }
 
-    const relEdges: Edge[] = diagram.relations.map((rel: ERRelation) => {
+    const relEdges: Edge[] = visibleRelations.map((rel: ERRelation) => {
       const isIdentifying = rel.referenceForPK;
       const childCard = rel.childCardinality || '0..n';
       const parentCard = rel.parentCardinality || '1';
@@ -588,20 +617,22 @@ const ERDCanvasInner: React.FC = () => {
       };
     });
 
-    const commentEdges: Edge[] = (diagram.noteConnections || []).map((cc) => ({
-      id: cc.id,
-      source: cc.sourceId,
-      target: cc.targetId,
-      type: 'straight',
-      style: {
-        stroke: '#f9e2af',
-        strokeWidth: 1.5,
-        strokeDasharray: '4,4'
-      }
-    }));
+    const commentEdges: Edge[] = (diagram.noteConnections || [])
+      .filter((cc) => visibleNodeIdSet.has(cc.sourceId) && visibleNodeIdSet.has(cc.targetId))
+      .map((cc) => ({
+        id: cc.id,
+        source: cc.sourceId,
+        target: cc.targetId,
+        type: 'straight',
+        style: {
+          stroke: '#f9e2af',
+          strokeWidth: 1.5,
+          strokeDasharray: '4,4'
+        }
+      }));
 
     return [...relEdges, ...commentEdges];
-  }, [diagram.relations, diagram.noteConnections, diagram.notation]);
+  }, [diagram.relations, diagram.noteConnections, diagram.notation, visibleNodeIdSet]);
 
   const handleNodeDragStart = useCallback(
     (_event: any, node: Node) => {
@@ -1011,12 +1042,22 @@ const ERDCanvasInner: React.FC = () => {
       >
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
           <Table size={12} color="#89b4fa" />
-          <span>{t('hudTable')} {diagram.tables.length}</span>
+          <span>
+            {t('hudTable')}{' '}
+            {selectedCategoryId
+              ? `${computedNodes.filter((n) => n.type === 'tableNode').length}/${diagram.tables.length}`
+              : diagram.tables.length}
+          </span>
         </span>
         <span style={{ color: 'rgba(166, 173, 200, 0.45)' }}>|</span>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
           <Eye size={12} color="#a6e3a1" />
-          <span>{t('hudView')} {(diagram.views || []).length}</span>
+          <span>
+            {t('hudView')}{' '}
+            {selectedCategoryId
+              ? `${computedNodes.filter((n) => n.type === 'viewNode').length}/${(diagram.views || []).length}`
+              : (diagram.views || []).length}
+          </span>
         </span>
       </div>
 

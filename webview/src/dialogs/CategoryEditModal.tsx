@@ -156,8 +156,8 @@ export const CategoryEditModal: React.FC = () => {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '12px', marginBottom: '6px', color: 'var(--text-secondary)' }}>포함할 테이블 / 뷰</label>
-            <div style={{ maxHeight: '160px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ display: 'block', fontSize: '12px', marginBottom: '6px', color: 'var(--text-secondary)' }}>포함할 객체 (테이블 / 뷰 / 메모 / 이미지)</label>
+            <div style={{ maxHeight: '180px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {diagram.tables.map((t) => (
                 <label key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer' }}>
                   <input type="checkbox" checked={nodeElementIds.includes(t.id)} onChange={() => toggleNode(t.id)} />
@@ -168,6 +168,18 @@ export const CategoryEditModal: React.FC = () => {
                 <label key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer' }}>
                   <input type="checkbox" checked={nodeElementIds.includes(v.id)} onChange={() => toggleNode(v.id)} />
                   <span>[View] {v.physicalName} ({v.logicalName})</span>
+                </label>
+              ))}
+              {(diagram.notes || []).map((n, idx) => (
+                <label key={n.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={nodeElementIds.includes(n.id)} onChange={() => toggleNode(n.id)} />
+                  <span>[Note] {(n.text || `메모 ${idx + 1}`).split('\n')[0].slice(0, 36)}</span>
+                </label>
+              ))}
+              {(diagram.images || []).map((img, idx) => (
+                <label key={img.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={nodeElementIds.includes(img.id)} onChange={() => toggleNode(img.id)} />
+                  <span>[Image] 이미지 {idx + 1} ({img.id})</span>
                 </label>
               ))}
             </div>

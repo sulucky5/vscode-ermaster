@@ -8,6 +8,7 @@ import {
   NotationLevel
 } from './types/erm.types.js';
 import { ERDCanvas } from './components/ERDCanvas.js';
+import { CategorySheetBar } from './components/CategorySheetBar.js';
 import { TableEditModal } from './dialogs/TableEditModal.js';
 import { ViewEditModal } from './dialogs/ViewEditModal.js';
 import { CategoryEditModal } from './dialogs/CategoryEditModal.js';
@@ -300,9 +301,23 @@ export const App: React.FC = () => {
   ]);
 
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
+    <div
+      style={{
+        width: '100vw',
+        height: '100vh',
+        position: 'relative',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column'
+      }}
+    >
       {isDiagramLoaded ? (
-        <ERDCanvas />
+        <>
+          <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+            <ERDCanvas />
+          </div>
+          <CategorySheetBar />
+        </>
       ) : (
         <div
           style={{
