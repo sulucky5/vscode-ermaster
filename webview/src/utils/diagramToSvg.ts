@@ -13,8 +13,10 @@ export function renderDiagramToSvg(diagram: ERDiagram): { svg: string; width: nu
   const tables = diagram.tables || [];
   const views = diagram.views || [];
   const notes = diagram.notes || [];
+  const images = diagram.images || [];
   const categories = diagram.categories || [];
   const relations = diagram.relations || [];
+  const noteConnections = diagram.noteConnections || [];
 
   const getTableSize = (t: (typeof tables)[number]) => {
     const w = Math.max(t.width || 240, diagram.viewMode === 'both' ? 280 : 240);
@@ -127,6 +129,46 @@ export function renderDiagramToSvg(diagram: ERDiagram): { svg: string; width: nu
           `<text x="${midX}" y="${(sCy + tCy) / 2 - 4}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#334155">${esc(rel.name)}</text>`
         );
       }
+    }
+  }
+
+  // 2.5. Note Connections (Comment Connections)
+  const nodeCenterMap = new Map<string, { cx: number; cy: number }>();
+  for (const t of tables) {
+    const { w, h } = getTableSize(t);
+    nodeCenterMap.set(t.id, { cx: t.x + w / 2, cy: t.y + h / 2 });
+  }
+  for (const v of views) {
+    nodeCenterMap.set(v.id, { cx: v.x + (v.width || 220) / 2, cy: v.y + (v.height || 100) / 2 });
+  }
+  for (const n of notes) {
+    const { w, h } = getNoteSize(n);
+    nodeCenterMap.set(n.id, { cx: n.x + w / 2, cy: n.y + h / 2 });
+  }
+  for (const img of images) {
+    nodeCenterMap.set(img.id, { cx: img.x + (img.width || 200) / 2, cy: img.y + (img.height || 150) / 2 });
+  }
+  for (const cat of categories) {
+    nodeCenterMap.set(cat.id, { cx: cat.x + (cat.width || 400) / 2, cy: cat.y + (cat.height || 300) / 2 });
+  }
+
+  for (const cc of noteConnections) {
+    const src = nodeCenterMap.get(cc.sourceId);
+    const tgt = nodeCenterMap.get(cc.targetId);
+    if (!src || !tgt) continue;
+    if (cc.bendpoints && cc.bendpoints.length > 0) {
+      const pts = [
+        `${src.cx} ${src.cy}`,
+        ...cc.bendpoints.map((bp) => `${bp.x} ${bp.y}`),
+        `${tgt.cx} ${tgt.cy}`
+      ];
+      parts.push(
+        `<path d="M ${pts.join(' L ')}" fill="none" stroke="#d97706" stroke-width="1.6" stroke-dasharray="5,4"/>`
+      );
+    } else {
+      parts.push(
+        `<line x1="${src.cx}" y1="${src.cy}" x2="${tgt.cx}" y2="${tgt.cy}" stroke="#d97706" stroke-width="1.6" stroke-dasharray="5,4"/>`
+      );
     }
   }
 
