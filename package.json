@@ -2,9 +2,13 @@
   "name": "ermaster-vscode",
   "displayName": "ERMaster for VS Code",
   "description": "A modern ER Diagram editor for VS Code compatible with Eclipse ERMaster (.erm)",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "publisher": "sulucky5",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sulucky5/vscode-ermaster.git"
+  },
   "icon": "media/icon.png",
   "engines": {
     "vscode": "^1.85.0"
@@ -83,14 +87,17 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm version patch --no-git-tag-version && npm run build",
+    "vscode:prepublish": "npm run build",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "build:webview": "cd webview && npm run build",
     "build:extension": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "build:jdbc": "javac -encoding UTF-8 -cp lib/poi-3.7-20101029.jar -d dist/jdbc jdbc/JdbcReverseEngineer.java jdbc/ExcelTemplateExporter.java",
     "build": "npm run build:webview && npm run build:extension && npm run build:jdbc",
-    "dev:webview": "cd webview && npm run dev"
+    "dev:webview": "cd webview && npm run dev",
+    "publish:ovsx": "node scripts/publish.mjs ovsx",
+    "publish:vscode": "node scripts/publish.mjs vscode",
+    "publish:all": "node scripts/publish.mjs all"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
