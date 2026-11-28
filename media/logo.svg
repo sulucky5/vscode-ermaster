@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none">
+  <defs>
+    <!-- Header Gradients -->
+    <linearGradient id="blueHeader" x1="16" y1="20" x2="122" y2="42" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#89b4fa"/>
+      <stop offset="100%" stop-color="#74aeff"/>
+    </linearGradient>
+    <linearGradient id="purpleHeader" x1="134" y1="134" x2="240" y2="156" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#d4aaff"/>
+      <stop offset="100%" stop-color="#c39af7"/>
+    </linearGradient>
+    <!-- Connector Gradient -->
+    <linearGradient id="linkGrad" x1="120" y1="72" x2="187" y2="134" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7bb4ff"/>
+      <stop offset="55%" stop-color="#a8a9fc"/>
+      <stop offset="100%" stop-color="#cba6f7"/>
+    </linearGradient>
+    <!-- Soft Drop Shadow -->
+    <filter id="cardShadow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#0b0d17" flood-opacity="0.35"/>
+    </filter>
+    <!-- Node Glow -->
+    <filter id="nodeGlow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <!-- Card Clip Paths -->
+    <clipPath id="clipTopTable">
+      <rect x="16" y="20" width="106" height="104" rx="13"/>
+    </clipPath>
+    <clipPath id="clipBottomTable">
+      <rect x="134" y="134" width="106" height="104" rx="13"/>
+    </clipPath>
+  </defs>
+
+  <!-- Relationship Connector (behind table borders, above background) -->
+  <g filter="url(#cardShadow)">
+    <!-- Dark Outline -->
+    <path
+      d="M 120 72 H 178 Q 187 72 187 81 V 134 M 187 110 L 163 134 M 187 110 L 211 134"
+      stroke="#1e2233"
+      stroke-width="10"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      fill="none"
+    />
+    <!-- Gradient Inner Line -->
+    <path
+      d="M 120 72 H 178 Q 187 72 187 81 V 134 M 187 110 L 163 134 M 187 110 L 211 134"
+      stroke="url(#linkGrad)"
+      stroke-width="5.2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      fill="none"
+    />
+  </g>
+
+  <!-- Top-Left Table Card -->
+  <g filter="url(#cardShadow)">
+    <g clip-path="url(#clipTopTable)">
+      <rect x="16" y="20" width="106" height="104" fill="#252a3d"/>
+      <rect x="16" y="20" width="106" height="22" fill="url(#blueHeader)"/>
+      <line x1="16" y1="42" x2="122" y2="42" stroke="#1b1f2e" stroke-width="2"/>
+      <line x1="48" y1="42" x2="48" y2="124" stroke="#3c435c" stroke-width="2.5"/>
+      <!-- Row 1 -->
+      <circle cx="32" cy="59" r="5" fill="#9298a8"/>
+      <rect x="58" y="54" width="50" height="10" rx="5" fill="#8b91a2"/>
+      <!-- Row 2 -->
+      <circle cx="32" cy="81" r="5" fill="#9298a8"/>
+      <rect x="58" y="76" width="50" height="10" rx="5" fill="#8b91a2"/>
+      <!-- Row 3 -->
+      <circle cx="32" cy="103" r="5" fill="#9298a8"/>
+      <rect x="58" y="98" width="50" height="10" rx="5" fill="#8b91a2"/>
+    </g>
+    <rect x="16" y="20" width="106" height="104" rx="13" stroke="#454c66" stroke-width="3.2" fill="none"/>
+  </g>
+
+  <!-- Bottom-Right Table Card -->
+  <g filter="url(#cardShadow)">
+    <g clip-path="url(#clipBottomTable)">
+      <rect x="134" y="134" width="106" height="104" fill="#252a3d"/>
+      <rect x="134" y="134" width="106" height="22" fill="url(#purpleHeader)"/>
+      <line x1="134" y1="156" x2="240" y2="156" stroke="#1b1f2e" stroke-width="2"/>
+      <line x1="166" y1="156" x2="166" y2="238" stroke="#3c435c" stroke-width="2.5"/>
+      <!-- Row 1 -->
+      <circle cx="150" cy="173" r="5" fill="#9298a8"/>
+      <rect x="176" y="168" width="50" height="10" rx="5" fill="#8b91a2"/>
+      <!-- Row 2 -->
+      <circle cx="150" cy="195" r="5" fill="#9298a8"/>
+      <rect x="176" y="190" width="50" height="10" rx="5" fill="#8b91a2"/>
+      <!-- Row 3 -->
+      <circle cx="150" cy="217" r="5" fill="#9298a8"/>
+      <rect x="176" y="212" width="50" height="10" rx="5" fill="#8b91a2"/>
+    </g>
+    <rect x="134" y="134" width="106" height="104" rx="13" stroke="#454c66" stroke-width="3.2" fill="none"/>
+  </g>
+
+  <!-- Glowing Connection Point -->
+  <circle cx="120" cy="72" r="9.5" fill="#7bb4ff" filter="url(#nodeGlow)"/>
+  <circle cx="120" cy="72" r="7.5" fill="#9ec8ff"/>
+</svg>

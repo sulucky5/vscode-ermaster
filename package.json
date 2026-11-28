@@ -2,7 +2,7 @@
   "name": "ermaster-vscode",
   "displayName": "ERMaster for VS Code",
   "description": "A modern ER Diagram editor for VS Code compatible with Eclipse ERMaster (.erm)",
-  "version": "0.1.57",
+  "version": "1.0.0",
   "publisher": "sulucky5",
   "license": "Apache-2.0",
   "icon": "media/icon.png",

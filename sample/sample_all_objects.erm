@@ -64,7 +64,7 @@
 			<categories>
 				<category>
 					<id>cat_user</id>
-					<height>340</height>
+					<height>396</height>
 					<width>600</width>
 					<font_name></font_name>
 					<font_size>9</font_size>
@@ -82,7 +82,7 @@
 				</category>
 				<category>
 					<id>cat_product</id>
-					<height>340</height>
+					<height>396</height>
 					<width>620</width>
 					<font_name></font_name>
 					<font_size>9</font_size>
@@ -100,12 +100,12 @@
 				</category>
 				<category>
 					<id>cat_order</id>
-					<height>360</height>
+					<height>410</height>
 					<width>924</width>
 					<font_name></font_name>
 					<font_size>9</font_size>
-					<x>30</x>
-					<y>590</y>
+					<x>31</x>
+					<y>650</y>
 					<color>
 						<r>250</r>
 						<g>179</g>
@@ -1193,8 +1193,8 @@
 			<width>250</width>
 			<font_name></font_name>
 			<font_size>9</font_size>
-			<x>60</x>
-			<y>650</y>
+			<x>61</x>
+			<y>710</y>
 			<color>
 				<r>250</r>
 				<g>179</g>
@@ -1382,8 +1382,8 @@
 			<width>250</width>
 			<font_name></font_name>
 			<font_size>9</font_size>
-			<x>380</x>
-			<y>650</y>
+			<x>381</x>
+			<y>710</y>
 			<color>
 				<r>250</r>
 				<g>179</g>
@@ -1567,8 +1567,8 @@
 			<width>230</width>
 			<font_name></font_name>
 			<font_size>9</font_size>
-			<x>690</x>
-			<y>650</y>
+			<x>691</x>
+			<y>710</y>
 			<color>
 				<r>148</r>
 				<g>226</g>
