@@ -1,0 +1,59 @@
+name: Publish Extension
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      publish_ovsx:
+        description: 'Also publish to Open VSX Registry (requires OVSX_PAT secret)'
+        type: boolean
+        default: true
+
+jobs:
+  publish:
+    name: Build & Publish Extension
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Java (for JDBC / Excel classes)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install webview dependencies
+        run: npm ci --prefix webview
+
+      - name: Build & Package VSIX
+        run: npx @vscode/vsce package --no-dependencies --out extension.vsix
+
+      - name: Publish to VS Code Marketplace (OIDC)
+        run: npx @vscode/vsce publish --oidc --packagePath extension.vsix
+
+      - name: Publish to Open VSX Registry
+        if: ${{ github.event_name == 'push' || inputs.publish_ovsx == true }}
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: |
+          if [ -n "$OVSX_PAT" ]; then
+            npx ovsx publish extension.vsix -p "$OVSX_PAT"
+          else
+            echo "OVSX_PAT secret is not set; skipping Open VSX publish."
+          fi
