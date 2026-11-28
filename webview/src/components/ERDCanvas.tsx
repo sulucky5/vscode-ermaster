@@ -537,7 +537,11 @@ const ERDCanvasInner: React.FC = () => {
   const reconnectRelation = useERDStore((state) => state.reconnectRelation);
 
   const prevSelectedCategoryIdRef = useRef<string | null | undefined>(undefined);
-  const selectedCategoryId = diagram.categorySettings?.selectedCategoryId ?? null;
+  const rawSelectedCategoryId = diagram.categorySettings?.selectedCategoryId ?? null;
+  const selectedCategoryId =
+    rawSelectedCategoryId && (diagram.categories || []).some((c) => c.id === rawSelectedCategoryId)
+      ? rawSelectedCategoryId
+      : null;
   useEffect(() => {
     if (prevSelectedCategoryIdRef.current === undefined) {
       prevSelectedCategoryIdRef.current = selectedCategoryId;

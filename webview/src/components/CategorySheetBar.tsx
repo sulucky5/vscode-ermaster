@@ -9,6 +9,10 @@ export const CategorySheetBar: React.FC = () => {
   const selectedCategoryId = useERDStore(
     (state) => state.diagram.categorySettings?.selectedCategoryId ?? null
   );
+  const activeCategoryId =
+    selectedCategoryId && categories.some((c) => c.id === selectedCategoryId)
+      ? selectedCategoryId
+      : null;
   const lockEdit = useERDStore((state) => Boolean(state.diagram.lockEdit));
   const setCategorySettings = useERDStore((state) => state.setCategorySettings);
   const addCategory = useERDStore((state) => state.addCategory);
@@ -47,8 +51,8 @@ export const CategorySheetBar: React.FC = () => {
         <button
           type="button"
           role="tab"
-          aria-selected={!selectedCategoryId}
-          className={`erd-sheet-tab ${!selectedCategoryId ? 'active' : ''}`}
+          aria-selected={!activeCategoryId}
+          className={`erd-sheet-tab ${!activeCategoryId ? 'active' : ''}`}
           onClick={() => setCategorySettings({ selectedCategoryId: null })}
           title={t('showAll')}
         >
@@ -57,7 +61,7 @@ export const CategorySheetBar: React.FC = () => {
         </button>
 
         {categories.map((cat) => {
-          const isActive = selectedCategoryId === cat.id;
+          const isActive = activeCategoryId === cat.id;
           const c = cat.color || { r: 137, g: 180, b: 250 };
           const accent = `rgb(${c.r}, ${c.g}, ${c.b})`;
           const itemCount = (cat.nodeElementIds || []).length;

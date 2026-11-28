@@ -117,22 +117,6 @@
 					<node_element>tbl_order_items</node_element>
 					<node_element>view_order_summary</node_element>
 				</category>
-				<category>
-					<id>cat_1795840585526</id>
-					<height>300</height>
-					<width>420</width>
-					<font_name></font_name>
-					<font_size>9</font_size>
-					<x>80</x>
-					<y>80</y>
-					<color>
-						<r>137</r>
-						<g>180</g>
-						<b>250</b>
-					</color>
-					<name>카테고리_4</name>
-					<selected>true</selected>
-				</category>
 			</categories>
 		</category_settings>
 		<model_properties>

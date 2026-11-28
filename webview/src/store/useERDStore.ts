@@ -452,6 +452,11 @@ export const useERDStore = create<ERDState>((set, get) => ({
   setEdgeRoutingType: (edgeRoutingType) => set({ edgeRoutingType }),
 
   initDiagram: (diagram, fileName) => {
+    const categories = diagram.categories || [];
+    const rawSelCatId = diagram.categorySettings?.selectedCategoryId ?? null;
+    const validSelCatId =
+      rawSelCatId && categories.some((c) => c.id === rawSelCatId) ? rawSelCatId : null;
+
     set({
       diagram: fitCategoriesForDiagram({
         ...diagram,
@@ -459,7 +464,12 @@ export const useERDStore = create<ERDState>((set, get) => ({
         notes: diagram.notes || [],
         noteConnections: diagram.noteConnections || [],
         images: diagram.images || [],
-        categories: diagram.categories || [],
+        categories,
+        categorySettings: {
+          freeLayout: diagram.categorySettings?.freeLayout ?? false,
+          showReferredTables: diagram.categorySettings?.showReferredTables ?? false,
+          selectedCategoryId: validSelCatId
+        },
         columnGroups: diagram.columnGroups || [],
         sequences: diagram.sequences || [],
         triggers: diagram.triggers || [],
@@ -866,11 +876,12 @@ export const useERDStore = create<ERDState>((set, get) => ({
 
   addCategory: (customCat) => {
     const state = get();
+    if (state.diagram.lockEdit) return;
     const count = (state.diagram.categories || []).length + 1;
     const newCat: ERCategory = {
       id: `cat_${Date.now()}`,
       name: customCat?.name || `카테고리_${count}`,
-      selected: true,
+      selected: false,
       x: customCat?.x ?? 80,
       y: customCat?.y ?? 80,
       width: customCat?.width ?? 420,
@@ -879,24 +890,27 @@ export const useERDStore = create<ERDState>((set, get) => ({
       nodeElementIds: []
     };
     set({
-      diagram: { ...state.diagram, categories: [...(state.diagram.categories || []), newCat] },
       editingCategory: newCat,
       isCategoryModalOpen: true
     });
-    get().notifyUpdate();
   },
 
   updateCategory: (category) => {
-    set((state) => ({
-      diagram: fitCategoriesForDiagram({
-        ...state.diagram,
-        categories: (state.diagram.categories || []).map((c) =>
-          c.id === category.id ? category : c
-        )
-      }),
-      isCategoryModalOpen: false,
-      editingCategory: null
-    }));
+    set((state) => {
+      const existingCategories = state.diagram.categories || [];
+      const exists = existingCategories.some((c) => c.id === category.id);
+      const nextCategories = exists
+        ? existingCategories.map((c) => (c.id === category.id ? category : c))
+        : [...existingCategories, category];
+      return {
+        diagram: fitCategoriesForDiagram({
+          ...state.diagram,
+          categories: nextCategories
+        }),
+        isCategoryModalOpen: false,
+        editingCategory: null
+      };
+    });
     get().notifyUpdate();
   },
 
@@ -1183,6 +1197,9 @@ export const useERDStore = create<ERDState>((set, get) => ({
         ...c,
         nodeElementIds: (c.nodeElementIds || []).filter((nid) => !idSet.has(nid))
       }));
+    const prevSelCatId = state.diagram.categorySettings?.selectedCategoryId ?? null;
+    const nextSelCatId =
+      prevSelCatId && nextCategories.some((c) => c.id === prevSelCatId) ? prevSelCatId : null;
     set({
       diagram: {
         ...state.diagram,
@@ -1190,6 +1207,12 @@ export const useERDStore = create<ERDState>((set, get) => ({
         views: (state.diagram.views || []).filter((v) => !idSet.has(v.id)),
         notes: state.diagram.notes.filter((n) => !idSet.has(n.id)),
         categories: nextCategories,
+        categorySettings: state.diagram.categorySettings
+          ? {
+              ...state.diagram.categorySettings,
+              selectedCategoryId: nextSelCatId
+            }
+          : state.diagram.categorySettings,
         images: (state.diagram.images || []).filter((img) => !idSet.has(img.id)),
         relations: state.diagram.relations.filter(
           (r) => !idSet.has(r.sourceTableId) && !idSet.has(r.targetTableId)
@@ -1216,17 +1239,28 @@ export const useERDStore = create<ERDState>((set, get) => ({
   },
 
   setCategorySettings: (partial) => {
-    set((state) => ({
-      diagram: {
-        ...state.diagram,
-        categorySettings: {
-          freeLayout: state.diagram.categorySettings?.freeLayout ?? false,
-          showReferredTables: state.diagram.categorySettings?.showReferredTables ?? false,
-          selectedCategoryId: state.diagram.categorySettings?.selectedCategoryId ?? null,
-          ...partial
+    set((state) => {
+      const categories = state.diagram.categories || [];
+      const candidateSelId =
+        partial.selectedCategoryId !== undefined
+          ? partial.selectedCategoryId
+          : (state.diagram.categorySettings?.selectedCategoryId ?? null);
+      const validSelId =
+        candidateSelId && categories.some((c) => c.id === candidateSelId)
+          ? candidateSelId
+          : null;
+      return {
+        diagram: {
+          ...state.diagram,
+          categorySettings: {
+            freeLayout: state.diagram.categorySettings?.freeLayout ?? false,
+            showReferredTables: state.diagram.categorySettings?.showReferredTables ?? false,
+            ...partial,
+            selectedCategoryId: validSelId
+          }
         }
-      }
-    }));
+      };
+    });
     get().notifyUpdate();
   },
 

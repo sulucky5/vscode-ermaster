@@ -55,6 +55,8 @@ export const CategoryEditModal: React.FC = () => {
 
   if (!isCategoryModalOpen || !editingCategory) return null;
 
+  const isNewCategory = !(diagram.categories || []).some((c) => c.id === editingCategory.id);
+
   const toggleNode = (id: string) => {
     setNodeElementIds((prev) =>
       prev.includes(id) ? prev.filter((n) => n !== id) : [...prev, id]
@@ -186,15 +188,17 @@ export const CategoryEditModal: React.FC = () => {
           </div>
         </div>
 
-        <div className="modal-footer" style={{ justifyContent: 'space-between' }}>
-          <button
-            className="btn"
-            style={{ backgroundColor: 'rgba(243, 139, 168, 0.15)', color: '#f38ba8', border: '1px solid rgba(243, 139, 168, 0.3)' }}
-            onClick={() => deleteCategory(editingCategory.id)}
-          >
-            <Trash2 size={14} />
-            <span>삭제</span>
-          </button>
+        <div className="modal-footer" style={{ justifyContent: isNewCategory ? 'flex-end' : 'space-between' }}>
+          {!isNewCategory && (
+            <button
+              className="btn"
+              style={{ backgroundColor: 'rgba(243, 139, 168, 0.15)', color: '#f38ba8', border: '1px solid rgba(243, 139, 168, 0.3)' }}
+              onClick={() => deleteCategory(editingCategory.id)}
+            >
+              <Trash2 size={14} />
+              <span>삭제</span>
+            </button>
+          )}
           <div style={{ display: 'flex', gap: '8px' }}>
             <button className="btn btn-secondary" onClick={closeCategoryModal}>취소</button>
             <button className="btn btn-primary" onClick={handleSave}>
