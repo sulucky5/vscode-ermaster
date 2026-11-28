@@ -19,7 +19,8 @@ export function renderDiagramToSvg(diagram: ERDiagram): { svg: string; width: nu
   const getTableSize = (t: (typeof tables)[number]) => {
     const w = Math.max(t.width || 240, diagram.viewMode === 'both' ? 280 : 240);
     const headerH = diagram.viewMode === 'both' && t.logicalName ? 44 : 32;
-    const bodyH = diagram.notationLevel === 'title' ? 0 : Math.max(1, t.columns.length) * 22 + 10;
+    const cols = t.columns || [];
+    const bodyH = diagram.notationLevel === 'title' ? 0 : Math.max(1, cols.length) * 22 + 10;
     const h = Math.max(t.height || 0, headerH + bodyH);
     return { w, h, headerH };
   };
@@ -79,14 +80,15 @@ export function renderDiagramToSvg(diagram: ERDiagram): { svg: string; width: nu
     const c = cat.color || { r: 137, g: 180, b: 250 };
     const cw = cat.width || 400;
     const ch = cat.height || 300;
+    const catName = cat.name || '';
     parts.push(
       `<rect x="${cat.x}" y="${cat.y}" width="${cw}" height="${ch}" rx="10" fill="rgba(${c.r},${c.g},${c.b},0.08)" stroke="rgb(${c.r},${c.g},${c.b})" stroke-width="1.5" stroke-dasharray="6,4"/>`
     );
     parts.push(
-      `<rect x="${cat.x}" y="${cat.y}" width="${Math.min(cw, Math.max(90, cat.name.length * 10 + 24))}" height="24" rx="6" fill="rgba(${c.r},${c.g},${c.b},0.22)"/>`
+      `<rect x="${cat.x}" y="${cat.y}" width="${Math.min(cw, Math.max(90, catName.length * 10 + 24))}" height="24" rx="6" fill="rgba(${c.r},${c.g},${c.b},0.22)"/>`
     );
     parts.push(
-      `<text x="${cat.x + 10}" y="${cat.y + 16}" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="rgb(${Math.max(0, c.r - 40)},${Math.max(0, c.g - 40)},${Math.max(0, c.b - 40)})">${esc(cat.name)}</text>`
+      `<text x="${cat.x + 10}" y="${cat.y + 16}" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="rgb(${Math.max(0, c.r - 40)},${Math.max(0, c.g - 40)},${Math.max(0, c.b - 40)})">${esc(catName)}</text>`
     );
   }
 
@@ -145,39 +147,42 @@ export function renderDiagramToSvg(diagram: ERDiagram): { svg: string; width: nu
       `<line x1="${t.x}" y1="${t.y + headerH}" x2="${t.x + w}" y2="${t.y + headerH}" stroke="${borderCol}" stroke-width="1"/>`
     );
 
+    const physName = t.physicalName || '';
     const title =
       diagram.viewMode === 'logical'
-        ? t.logicalName || t.physicalName
+        ? t.logicalName || physName
         : diagram.capital
-        ? t.physicalName.toUpperCase()
-        : t.physicalName;
+        ? physName.toUpperCase()
+        : physName;
     parts.push(
       `<text x="${t.x + 10}" y="${t.y + 20}" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#1e293b">${esc(title)}</text>`
     );
-    if (diagram.viewMode === 'both' && t.logicalName && t.logicalName !== t.physicalName) {
+    if (diagram.viewMode === 'both' && t.logicalName && t.logicalName !== physName) {
       parts.push(
         `<text x="${t.x + 10}" y="${t.y + 36}" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#64748b">${esc(t.logicalName)}</text>`
       );
     }
 
     if (diagram.notationLevel !== 'title') {
-      t.columns.forEach((col, idx) => {
+      (t.columns || []).forEach((col, idx) => {
         const cy = t.y + headerH + 17 + idx * 22;
         const badge = col.primaryKey ? '[PK] ' : col.foreignKey ? '[FK] ' : '';
+        const colPhys = col.physicalName || '';
         const colBaseName =
           diagram.viewMode === 'logical'
-            ? col.logicalName || col.physicalName
+            ? col.logicalName || colPhys
             : diagram.capital
-            ? col.physicalName.toUpperCase()
-            : col.physicalName;
+            ? colPhys.toUpperCase()
+            : colPhys;
         const colSubName =
-          diagram.viewMode === 'both' && col.logicalName && col.logicalName !== col.physicalName
+          diagram.viewMode === 'both' && col.logicalName && col.logicalName !== colPhys
             ? ` (${col.logicalName})`
             : '';
         const colName = `${colBaseName}${colSubName}`;
+        const colType = col.type || '';
         const typeStr = col.length
-          ? `${col.type}(${col.length}${col.decimal ? `,${col.decimal}` : ''})`
-          : col.type;
+          ? `${colType}(${col.length}${col.decimal ? `,${col.decimal}` : ''})`
+          : colType;
         parts.push(
           `<text x="${t.x + 10}" y="${cy}" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="${col.primaryKey ? '700' : '400'}" fill="${col.primaryKey ? '#be123c' : '#334155'}">${esc(badge + colName)}</text>`
         );

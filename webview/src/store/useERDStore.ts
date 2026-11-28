@@ -92,6 +92,7 @@ interface ERDState {
   isImportFileModalOpen: boolean;
   isImportDBModalOpen: boolean;
   isExportModalOpen: boolean;
+  isPrintPreviewOpen: boolean;
   isModelManagerOpen: boolean;
   modelManagerTab: ModelManagerTab;
   editingRelation: ERRelation | null;
@@ -203,6 +204,8 @@ interface ERDState {
   closeImportDBModal: () => void;
   openExportModal: () => void;
   closeExportModal: () => void;
+  openPrintPreview: () => void;
+  closePrintPreview: () => void;
   openModelManager: (tab?: ModelManagerTab) => void;
   closeModelManager: () => void;
   notifyUpdate: () => void;
@@ -435,6 +438,7 @@ export const useERDStore = create<ERDState>((set, get) => ({
   isImportFileModalOpen: false,
   isImportDBModalOpen: false,
   isExportModalOpen: false,
+  isPrintPreviewOpen: false,
   isModelManagerOpen: false,
   modelManagerTab: 'dictionary',
   editingRelation: null,
@@ -1283,6 +1287,8 @@ export const useERDStore = create<ERDState>((set, get) => ({
   closeImportDBModal: () => set({ isImportDBModalOpen: false }),
   openExportModal: () => set({ isExportModalOpen: true }),
   closeExportModal: () => set({ isExportModalOpen: false }),
+  openPrintPreview: () => set({ isPrintPreviewOpen: true }),
+  closePrintPreview: () => set({ isPrintPreviewOpen: false }),
   openModelManager: (tab) =>
     set((state) => ({
       isModelManagerOpen: true,

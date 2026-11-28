@@ -300,6 +300,7 @@ const ERDCanvasInner: React.FC = () => {
   const openSearchModal = useERDStore((state) => state.openSearchModal);
   const openDDLModal = useERDStore((state) => state.openDDLModal);
   const openExportModal = useERDStore((state) => state.openExportModal);
+  const openPrintPreview = useERDStore((state) => state.openPrintPreview);
 
   const [contextMenu, setContextMenu] = useState<{
     x: number;
@@ -1097,7 +1098,7 @@ const ERDCanvasInner: React.FC = () => {
             {
               label: t('ctxPrint'),
               icon: Printer,
-              onClick: () => window.print()
+              onClick: () => openPrintPreview()
             }
           ].map((item, idx) => {
             if ('divider' in item) {

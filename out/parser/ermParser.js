@@ -172,6 +172,8 @@ function parseERMXml(xmlString) {
         const props = {};
         if (ts.properties && typeof ts.properties === 'object') {
             for (const [k, v] of Object.entries(ts.properties)) {
+                if (k.startsWith('#') || k.startsWith('@_'))
+                    continue;
                 props[k] = v;
             }
         }

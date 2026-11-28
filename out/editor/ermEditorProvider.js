@@ -37,6 +37,8 @@ exports.ERMEditorProvider = void 0;
 const vscode = __importStar(require("vscode"));
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
+const os = __importStar(require("os"));
+const child_process_1 = require("child_process");
 const ermParser_js_1 = require("../parser/ermParser.js");
 const ermSerializer_js_1 = require("../parser/ermSerializer.js");
 const ddlGenerator_js_1 = require("../ddl/ddlGenerator.js");
@@ -533,6 +535,63 @@ class ERMEditorProvider {
                     if (uri && message.svgContent) {
                         fs.writeFileSync(uri.fsPath, message.svgContent, 'utf8');
                         vscode.window.showInformationMessage(`SVG 이미지 저장 완료: ${path.basename(uri.fsPath)}`);
+                    }
+                    break;
+                }
+                case 'printDiagram': {
+                    if (typeof message.svgContent === 'string' && message.svgContent) {
+                        const title = path.basename(document.fileName);
+                        const safeTitle = title.replace(/[<>&"]/g, '');
+                        const orientation = message.orientation === 'portrait' ? 'portrait' : 'landscape';
+                        const paperSize = message.paperSize === 'A3' ? 'A3' : 'A4';
+                        const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Print - ${safeTitle}</title>
+  <style>
+    @page { size: ${paperSize} ${orientation}; margin: 10mm; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 16px; background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 10px 14px; background: #1e293b; color: #f8fafc; border-radius: 8px; }
+    .toolbar button { background: #3b82f6; color: #fff; border: none; border-radius: 6px; padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .sheet { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; overflow: auto; text-align: center; }
+    svg { max-width: 100%; height: auto; }
+    @media print {
+      body { background: #ffffff; padding: 0; }
+      .toolbar { display: none; }
+      .sheet { border: none; padding: 0; overflow: visible; }
+      svg { width: 100%; max-height: 96vh; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <span><strong>ERMaster</strong> — ${safeTitle}</span>
+    <button onclick="window.print()">Print / Save as PDF</button>
+  </div>
+  <div class="sheet">${message.svgContent}</div>
+  <script>window.addEventListener('load', function() { setTimeout(function() { window.print(); }, 250); });</script>
+</body>
+</html>`;
+                        const tmpPath = path.join(os.tmpdir(), `ermaster_print_${Date.now()}.html`);
+                        fs.writeFileSync(tmpPath, html, 'utf8');
+                        if (process.platform === 'win32') {
+                            (0, child_process_1.exec)(`start "" "${tmpPath}"`, (err) => {
+                                if (err) {
+                                    vscode.window.showErrorMessage(`인쇄 창 실행 실패: ${err.message}`);
+                                }
+                            });
+                        }
+                        else if (process.platform === 'darwin') {
+                            (0, child_process_1.spawn)('open', [tmpPath], { detached: true, stdio: 'ignore' }).unref();
+                        }
+                        else {
+                            const opened = await vscode.env.openExternal(vscode.Uri.file(tmpPath));
+                            if (!opened) {
+                                (0, child_process_1.spawn)('xdg-open', [tmpPath], { detached: true, stdio: 'ignore' }).unref();
+                            }
+                        }
                     }
                     break;
                 }

@@ -19,6 +19,7 @@ import { ImportDBModal } from './dialogs/ImportDBModal.js';
 import { ExportModal } from './dialogs/ExportModal.js';
 import { SearchModal } from './dialogs/SearchModal.js';
 import { EditAllAttributesModal } from './dialogs/EditAllAttributesModal.js';
+import { PrintPreviewModal } from './dialogs/PrintPreviewModal.js';
 
 export const App: React.FC = () => {
   const { t } = useI18n();
@@ -120,7 +121,7 @@ export const App: React.FC = () => {
               store.toggleOutline();
               break;
             case 'print':
-              window.print();
+              store.openPrintPreview();
               break;
             case 'openDDLModal':
               store.openDDLModal();
@@ -186,6 +187,7 @@ export const App: React.FC = () => {
           s.isImportFileModalOpen ||
           s.isImportDBModalOpen ||
           s.isExportModalOpen ||
+          s.isPrintPreviewOpen ||
           s.isModelManagerOpen ||
           s.isSearchModalOpen ||
           s.isEditAllModalOpen;
@@ -327,6 +329,7 @@ export const App: React.FC = () => {
       <ExportModal />
       <SearchModal />
       <EditAllAttributesModal />
+      <PrintPreviewModal />
     </div>
   );
 };
