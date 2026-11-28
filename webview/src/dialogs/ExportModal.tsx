@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useERDStore, vscode } from '../store/useERDStore.js';
 import { renderDiagramToSvg } from '../utils/diagramToSvg.js';
+import { useI18n } from '../i18n/translations.js';
 import { X, Download, FileSpreadsheet, Globe, Coffee, Image as ImageIcon, Database, BookOpen, Languages, TestTube, FolderOpen, Plus, Trash2 } from 'lucide-react';
 
 interface ExcelTemplateItem {
@@ -11,6 +12,7 @@ interface ExcelTemplateItem {
 }
 
 export const ExportModal: React.FC = () => {
+  const { t } = useI18n();
   const isOpen = useERDStore((state) => state.isExportModalOpen);
   const closeModal = useERDStore((state) => state.closeExportModal);
   const diagram = useERDStore((state) => state.diagram);
@@ -137,12 +139,12 @@ export const ExportModal: React.FC = () => {
   };
 
   return (
-    <div className="modal-overlay" onClick={closeModal}>
+    <div className="modal-overlay">
       <div className="modal-content" style={{ maxWidth: '780px' }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Download size={16} color="var(--accent-primary)" />
-            <span style={{ fontSize: '15px', fontWeight: 600 }}>모델 내보내기 (Export)</span>
+            <span style={{ fontSize: '15px', fontWeight: 600 }}>{t('exportTitle')}</span>
           </div>
           <button onClick={closeModal} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
             <X size={18} />
@@ -155,17 +157,17 @@ export const ExportModal: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, fontSize: '13px' }}>
                 <FileSpreadsheet size={15} color="#a6e3a1" />
-                <span>Excel 명세서 내보내기 (.xls)</span>
+                <span>{t('exportExcelTitle')}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <button
                   className="btn btn-secondary"
                   style={{ padding: '4px 8px', fontSize: '11px' }}
-                  title="선택한 템플릿 파일을 내려받아 수정할 수 있습니다"
+                  title={t('exportTemplateDownload')}
                   onClick={() => vscode?.postMessage({ type: 'export:downloadTemplate', templateId: selectedTemplateId })}
                 >
                   <Download size={12} />
-                  <span>템플릿 다운로드</span>
+                  <span>{t('exportTemplateDownload')}</span>
                 </button>
                 <button
                   className="btn btn-secondary"
@@ -173,7 +175,7 @@ export const ExportModal: React.FC = () => {
                   onClick={() => vscode?.postMessage({ type: 'export:addTemplate' })}
                 >
                   <Plus size={12} />
-                  <span>템플릿 추가 (.xls)</span>
+                  <span>{t('exportTemplateAdd')}</span>
                 </button>
               </div>
             </div>
@@ -200,17 +202,17 @@ export const ExportModal: React.FC = () => {
               )}
               <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', cursor: 'pointer' }}>
                 <input type="checkbox" checked={useLogicalSheetName} onChange={(e) => setUseLogicalSheetName(e.target.checked)} />
-                <span>시트명에 논리명 사용</span>
+                <span>{t('exportUseLogicalSheet')}</span>
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', cursor: 'pointer' }}>
                 <input type="checkbox" checked={includeDiagramImage} onChange={(e) => setIncludeDiagramImage(e.target.checked)} />
-                <span>다이어그램 이미지 포함</span>
+                <span>{t('exportIncludeImage')}</span>
               </label>
               <button
                 className="btn btn-primary"
                 onClick={handleExportExcel}
               >
-                Excel 내보내기
+                {t('exportExcelBtn')}
               </button>
             </div>
           </div>
@@ -219,27 +221,27 @@ export const ExportModal: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
             <button className="btn btn-secondary" onClick={() => vscode?.postMessage({ type: 'export:html', diagram })}>
               <Globe size={14} color="#89b4fa" />
-              <span>HTML 문서 (.html)</span>
+              <span>{t('exportHtmlBtn')}</span>
             </button>
             <button className="btn btn-secondary" onClick={handleExportPng}>
               <ImageIcon size={14} color="#f9e2af" />
-              <span>이미지 (.png)</span>
+              <span>{t('exportPngBtn')}</span>
             </button>
             <button className="btn btn-secondary" onClick={() => vscode?.postMessage({ type: 'export:svg', svgContent: captureDiagramSvg() })}>
               <ImageIcon size={14} color="#fab387" />
-              <span>벡터 이미지 (.svg)</span>
+              <span>{t('exportSvgBtn')}</span>
             </button>
             <button className="btn btn-secondary" onClick={() => vscode?.postMessage({ type: 'export:dictionary', diagram })}>
               <BookOpen size={14} color="#cba6f7" />
-              <span>단어 사전 (.csv)</span>
+              <span>{t('exportDictBtn')}</span>
             </button>
             <button className="btn btn-secondary" onClick={() => vscode?.postMessage({ type: 'export:translations', diagram })}>
               <Languages size={14} color="#94e2d5" />
-              <span>번역 사전 (.csv)</span>
+              <span>{t('exportTransBtn')}</span>
             </button>
             <button className="btn btn-secondary" onClick={() => vscode?.postMessage({ type: 'export:testData', diagram })}>
               <TestTube size={14} color="#f38ba8" />
-              <span>테스트 데이터 (.sql)</span>
+              <span>{t('exportTestDataBtn')}</span>
             </button>
           </div>
 
@@ -316,7 +318,7 @@ export const ExportModal: React.FC = () => {
         </div>
 
         <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={closeModal}>닫기</button>
+          <button className="btn btn-secondary" onClick={closeModal}>{t('close')}</button>
         </div>
       </div>
     </div>

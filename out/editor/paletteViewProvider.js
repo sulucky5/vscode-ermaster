@@ -34,20 +34,34 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OutlineViewProvider = exports.PaletteViewProvider = void 0;
+exports.resolveUiLanguage = resolveUiLanguage;
 exports.buildWebviewHtml = buildWebviewHtml;
 const vscode = __importStar(require("vscode"));
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
+function resolveUiLanguage() {
+    const configured = vscode.workspace.getConfiguration('ermaster').get('language', 'auto');
+    if (configured === 'ko' || configured === 'en' || configured === 'ja') {
+        return configured;
+    }
+    const envLang = (vscode.env.language || 'en').toLowerCase();
+    if (envLang.startsWith('ko'))
+        return 'ko';
+    if (envLang.startsWith('ja'))
+        return 'ja';
+    return 'en';
+}
 function buildWebviewHtml(webview, extensionPath, viewMode) {
     const webviewDist = path.join(extensionPath, 'dist', 'webview');
     const indexPath = path.join(webviewDist, 'index.html');
+    const lang = resolveUiLanguage();
     if (fs.existsSync(indexPath)) {
         let html = fs.readFileSync(indexPath, 'utf8');
         html = html.replace(/(src|href)="(\/assets\/[^"]+)"/g, (_, attr, src) => {
             const resourceUri = webview.asWebviewUri(vscode.Uri.file(path.join(webviewDist, src.replace(/^\//, ''))));
             return `${attr}="${resourceUri}"`;
         });
-        html = html.replace('</head>', `<script>window.__ERMASTER_VIEW__ = "${viewMode}";</script></head>`);
+        html = html.replace('</head>', `<script>window.__ERMASTER_VIEW__ = "${viewMode}";window.__ERMASTER_LANG__ = "${lang}";</script></head>`);
         return html;
     }
     return `<!DOCTYPE html>
@@ -120,6 +134,11 @@ class PaletteViewProvider {
         this.currentState = state;
         this.postState();
     }
+    postLanguage(lang) {
+        if (this.view) {
+            this.view.webview.postMessage({ type: 'setLanguage', lang });
+        }
+    }
     postState() {
         if (this.view) {
             this.view.webview.postMessage({
@@ -184,6 +203,11 @@ class OutlineViewProvider {
     updateData(data) {
         this.currentData = data;
         this.postData();
+    }
+    postLanguage(lang) {
+        if (this.view) {
+            this.view.webview.postMessage({ type: 'setLanguage', lang });
+        }
     }
     postData() {
         if (this.view) {

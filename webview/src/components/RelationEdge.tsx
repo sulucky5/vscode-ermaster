@@ -2,6 +2,7 @@ import React, { memo, useState } from 'react';
 import { EdgeProps, BaseEdge, EdgeLabelRenderer, useInternalNode, useReactFlow } from '@xyflow/react';
 import { getFloatingEdgeParams, computeEdgePath } from '../utils/floatingEdge.js';
 import { useERDStore } from '../store/useERDStore.js';
+import { Bendpoint, ERRelation } from '../types/erm.types.js';
 
 export const RelationEdge: React.FC<EdgeProps> = memo(({
   id,
@@ -21,7 +22,7 @@ export const RelationEdge: React.FC<EdgeProps> = memo(({
   const edgeRoutingType = useERDStore((state) => state.edgeRoutingType);
   const openRelationModal = useERDStore((state) => state.openRelationModal);
   const updateRelationBendpoints = useERDStore((state) => state.updateRelationBendpoints);
-  const diagram = useERDStore((state) => state.diagram);
+  const lockEdit = useERDStore((state) => Boolean(state.diagram.lockEdit));
   const { screenToFlowPosition } = useReactFlow();
 
   const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
@@ -38,8 +39,8 @@ export const RelationEdge: React.FC<EdgeProps> = memo(({
     totalEdges
   );
 
-  const rel = diagram.relations.find((r) => r.id === id);
-  const bendpoints = rel?.bendpoints || [];
+  const rel = data?.relation as ERRelation | undefined;
+  const bendpoints = (data?.bendpoints as Bendpoint[] | undefined) || rel?.bendpoints || [];
 
   let [edgePath, labelX, labelY] = computeEdgePath(params, edgeRoutingType);
 
@@ -62,14 +63,14 @@ export const RelationEdge: React.FC<EdgeProps> = memo(({
 
   const handleAddBendpoint = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (diagram.lockEdit) return;
+    if (lockEdit) return;
     const pos = screenToFlowPosition({ x: e.clientX, y: e.clientY });
     updateRelationBendpoints(id, [...bendpoints, { x: Math.round(pos.x), y: Math.round(pos.y) }]);
   };
 
   const handleBpPointerDown = (idx: number, e: React.PointerEvent) => {
     e.stopPropagation();
-    if (diagram.lockEdit) return;
+    if (lockEdit) return;
     setDraggingIdx(idx);
 
     const onMove = (me: PointerEvent) => {
@@ -122,7 +123,7 @@ export const RelationEdge: React.FC<EdgeProps> = memo(({
           </div>
         )}
 
-        {selected && !diagram.lockEdit && (
+        {selected && !lockEdit && (
           <>
             <button
               onClick={handleAddBendpoint}

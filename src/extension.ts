@@ -1,12 +1,21 @@
 import * as vscode from 'vscode';
 import { ERMEditorProvider } from './editor/ermEditorProvider.js';
-import { OutlineViewProvider, PaletteViewProvider } from './editor/paletteViewProvider.js';
+import { OutlineViewProvider, PaletteViewProvider, resolveUiLanguage } from './editor/paletteViewProvider.js';
 import { serializeERMXml } from './parser/ermSerializer.js';
 
 export function activate(context: vscode.ExtensionContext) {
   // 1. Primary Side Bar Views & Custom Editor Provider 등록
   let editorProvider: ERMEditorProvider;
-  const handleSidebarAction = (action: { type: 'sidebarAction'; action: string; value?: unknown }) => {
+  const handleSidebarAction = async (action: { type: 'sidebarAction'; action: string; value?: unknown }) => {
+    if (action.action === 'setLanguage' && typeof action.value === 'string') {
+      await vscode.workspace.getConfiguration('ermaster').update(
+        'language',
+        action.value,
+        vscode.ConfigurationTarget.Global
+      );
+      editorProvider?.broadcastLanguage(resolveUiLanguage());
+      return;
+    }
     editorProvider?.dispatchSidebarAction(action);
   };
   const paletteViewProvider = new PaletteViewProvider(context, handleSidebarAction, 'palette');
@@ -153,7 +162,14 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
-  context.subscriptions.push(newDiagramCmd);
+  context.subscriptions.push(
+    newDiagramCmd,
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration('ermaster.language')) {
+        editorProvider?.broadcastLanguage(resolveUiLanguage());
+      }
+    })
+  );
 }
 
 export function deactivate() {}

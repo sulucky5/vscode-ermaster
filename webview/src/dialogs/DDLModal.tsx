@@ -58,7 +58,7 @@ export const DDLModal: React.FC = () => {
   };
 
   return (
-    <div className="modal-overlay" onClick={closeDDLModal}>
+    <div className="modal-overlay">
       <div className="modal-content" style={{ maxWidth: '880px' }} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="modal-header">

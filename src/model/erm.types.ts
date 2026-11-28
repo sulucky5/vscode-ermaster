@@ -319,6 +319,10 @@ export interface ERDiagram {
   notationLevel?: NotationLevel;
   capital?: boolean;
   lockEdit?: boolean;
+  tableHeightMode?: 'auto' | 'fixed';
+  tableFixedHeight?: number;
+  tableWidthMode?: 'auto' | 'fixed';
+  tableFixedWidth?: number;
   dictionary: Word[];
   tables: ERTable[];
   views: ERView[];

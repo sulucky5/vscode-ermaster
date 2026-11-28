@@ -197,6 +197,7 @@ body, html, #root {
   justify-content: space-between;
   border-top-left-radius: 7px;
   border-top-right-radius: 7px;
+  overflow: hidden;
 }
 
 .table-node-title {
@@ -205,20 +206,25 @@ body, html, #root {
   color: #c0caf5;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
 }
 
 .table-node-logical {
   font-size: 11px;
   color: var(--text-secondary);
   font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .table-node-columns {
   padding: 4px 0;
-  max-height: 400px;
-  overflow-y: auto;
   border-bottom-left-radius: 7px;
   border-bottom-right-radius: 7px;
+  overflow-x: hidden;
 }
 
 .table-node-col {
@@ -228,6 +234,7 @@ body, html, #root {
   justify-content: space-between;
   gap: 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  min-width: 0;
 }
 
 .table-node-col:hover {
@@ -245,6 +252,7 @@ body, html, #root {
   padding: 2px 4px;
   border-radius: 3px;
   letter-spacing: 0.5px;
+  flex-shrink: 0;
 }
 
 .badge-pk {
@@ -269,6 +277,14 @@ body, html, #root {
   align-items: center;
   gap: 6px;
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.col-name > span:not(.badge) {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -278,6 +294,11 @@ body, html, #root {
   font-size: 11px;
   color: var(--text-muted);
   font-family: 'Fira Code', 'Courier New', monospace;
+  flex-shrink: 0;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Note Node */

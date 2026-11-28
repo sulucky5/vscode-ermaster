@@ -235,7 +235,7 @@ export const TableEditModal: React.FC = () => {
   };
 
   return (
-    <div className="modal-overlay" onClick={closeTableModal}>
+    <div className="modal-overlay">
       <div className="modal-content" style={{ maxWidth: '940px' }} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="modal-header">

@@ -15,6 +15,10 @@ export interface PaletteState {
   notationLevel?: string;
   capital?: boolean;
   edgeRoutingType?: string;
+  tableHeightMode?: 'auto' | 'fixed';
+  tableFixedHeight?: number;
+  tableWidthMode?: 'auto' | 'fixed';
+  tableFixedWidth?: number;
   isOutlineOpen?: boolean;
   selectedCount?: number;
 }
@@ -62,6 +66,19 @@ export interface SidebarActionMessage {
   value?: unknown;
 }
 
+export type SupportedLang = 'ko' | 'en' | 'ja';
+
+export function resolveUiLanguage(): SupportedLang {
+  const configured = vscode.workspace.getConfiguration('ermaster').get<string>('language', 'auto');
+  if (configured === 'ko' || configured === 'en' || configured === 'ja') {
+    return configured;
+  }
+  const envLang = (vscode.env.language || 'en').toLowerCase();
+  if (envLang.startsWith('ko')) return 'ko';
+  if (envLang.startsWith('ja')) return 'ja';
+  return 'en';
+}
+
 export function buildWebviewHtml(
   webview: vscode.Webview,
   extensionPath: string,
@@ -69,6 +86,7 @@ export function buildWebviewHtml(
 ): string {
   const webviewDist = path.join(extensionPath, 'dist', 'webview');
   const indexPath = path.join(webviewDist, 'index.html');
+  const lang = resolveUiLanguage();
 
   if (fs.existsSync(indexPath)) {
     let html = fs.readFileSync(indexPath, 'utf8');
@@ -80,7 +98,7 @@ export function buildWebviewHtml(
     });
     html = html.replace(
       '</head>',
-      `<script>window.__ERMASTER_VIEW__ = "${viewMode}";</script></head>`
+      `<script>window.__ERMASTER_VIEW__ = "${viewMode}";window.__ERMASTER_LANG__ = "${lang}";</script></head>`
     );
     return html;
   }
@@ -170,6 +188,12 @@ export class PaletteViewProvider implements vscode.WebviewViewProvider {
     this.postState();
   }
 
+  public postLanguage(lang: SupportedLang): void {
+    if (this.view) {
+      this.view.webview.postMessage({ type: 'setLanguage', lang });
+    }
+  }
+
   private postState(): void {
     if (this.view) {
       this.view.webview.postMessage({
@@ -248,6 +272,12 @@ export class OutlineViewProvider implements vscode.WebviewViewProvider {
   public updateData(data: OutlineData): void {
     this.currentData = data;
     this.postData();
+  }
+
+  public postLanguage(lang: SupportedLang): void {
+    if (this.view) {
+      this.view.webview.postMessage({ type: 'setLanguage', lang });
+    }
   }
 
   private postData(): void {

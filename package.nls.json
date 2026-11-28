@@ -1,0 +1,8 @@
+{
+  "views.tools": "Tools",
+  "views.view": "View",
+  "views.outline": "Outline",
+  "editor.displayName": "ERMaster ERD Editor",
+  "command.newDiagram.title": "Create New ER Diagram (.erm)",
+  "config.language.description": "UI language for ERMaster editor (auto follows VS Code display language)"
+}

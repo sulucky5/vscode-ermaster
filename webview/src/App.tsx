@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useERDStore, vscode, AlignMode } from './store/useERDStore.js';
+import { useI18n } from './i18n/translations.js';
 import {
   DatabaseType,
   NotationType,
@@ -20,7 +21,9 @@ import { SearchModal } from './dialogs/SearchModal.js';
 import { EditAllAttributesModal } from './dialogs/EditAllAttributesModal.js';
 
 export const App: React.FC = () => {
+  const { t } = useI18n();
   const initDiagram = useERDStore((state) => state.initDiagram);
+  const isDiagramLoaded = useERDStore((state) => state.isDiagramLoaded);
   const diagram = useERDStore((state) => state.diagram);
   const fileName = useERDStore((state) => state.fileName);
   const activeTool = useERDStore((state) => state.activeTool);
@@ -70,6 +73,18 @@ export const App: React.FC = () => {
               break;
             case 'setCapital':
               store.setCapital(Boolean(message.value));
+              break;
+            case 'setTableHeightSetting':
+              if (message.value && typeof message.value === 'object') {
+                const v = message.value as { mode?: 'auto' | 'fixed'; fixedHeight?: number };
+                if (v.mode) store.setTableHeightSetting(v.mode, v.fixedHeight);
+              }
+              break;
+            case 'setTableWidthSetting':
+              if (message.value && typeof message.value === 'object') {
+                const v = message.value as { mode?: 'auto' | 'fixed'; fixedWidth?: number };
+                if (v.mode) store.setTableWidthSetting(v.mode, v.fixedWidth);
+              }
               break;
             case 'toggleLockEdit':
               store.toggleLockEdit();
@@ -207,6 +222,10 @@ export const App: React.FC = () => {
       notationLevel: diagram.notationLevel || 'detail',
       capital: Boolean(diagram.capital),
       edgeRoutingType,
+      tableHeightMode: diagram.tableHeightMode || 'auto',
+      tableFixedHeight: diagram.tableFixedHeight ?? 220,
+      tableWidthMode: diagram.tableWidthMode || 'auto',
+      tableFixedWidth: diagram.tableFixedWidth ?? 240,
       isOutlineOpen,
       selectedCount
     });
@@ -221,44 +240,51 @@ export const App: React.FC = () => {
     diagram.tableStyle,
     diagram.notationLevel,
     diagram.capital,
+    diagram.tableHeightMode,
+    diagram.tableFixedHeight,
+    diagram.tableWidthMode,
+    diagram.tableFixedWidth,
     edgeRoutingType,
     isOutlineOpen,
     selectedCount
   ]);
 
   useEffect(() => {
-    vscode?.postMessage({
-      type: 'outlineData',
-      tables: diagram.tables.map((t) => ({
-        id: t.id,
-        physicalName: t.physicalName,
-        logicalName: t.logicalName,
-        columns: t.columns.map((c) => ({
+    const timer = window.setTimeout(() => {
+      vscode?.postMessage({
+        type: 'outlineData',
+        tables: diagram.tables.map((t) => ({
+          id: t.id,
+          physicalName: t.physicalName,
+          logicalName: t.logicalName,
+          columns: t.columns.map((c) => ({
+            id: c.id,
+            physicalName: c.physicalName,
+            logicalName: c.logicalName,
+            primaryKey: c.primaryKey
+          }))
+        })),
+        views: (diagram.views || []).map((v) => ({
+          id: v.id,
+          physicalName: v.physicalName,
+          logicalName: v.logicalName
+        })),
+        categories: (diagram.categories || []).map((c) => ({
           id: c.id,
-          physicalName: c.physicalName,
-          logicalName: c.logicalName,
-          primaryKey: c.primaryKey
-        }))
-      })),
-      views: (diagram.views || []).map((v) => ({
-        id: v.id,
-        physicalName: v.physicalName,
-        logicalName: v.logicalName
-      })),
-      categories: (diagram.categories || []).map((c) => ({
-        id: c.id,
-        name: c.name
-      })),
-      categorySettings: diagram.categorySettings,
-      notes: (diagram.notes || []).map((n) => ({
-        id: n.id,
-        text: n.text
-      })),
-      sequencesCount: (diagram.sequences || []).length,
-      triggersCount: (diagram.triggers || []).length,
-      tablespacesCount: (diagram.tablespaces || []).length,
-      columnGroupsCount: (diagram.columnGroups || []).length
-    });
+          name: c.name
+        })),
+        categorySettings: diagram.categorySettings,
+        notes: (diagram.notes || []).map((n) => ({
+          id: n.id,
+          text: n.text
+        })),
+        sequencesCount: (diagram.sequences || []).length,
+        triggersCount: (diagram.triggers || []).length,
+        tablespacesCount: (diagram.tablespaces || []).length,
+        columnGroupsCount: (diagram.columnGroups || []).length
+      });
+    }, 250);
+    return () => window.clearTimeout(timer);
   }, [
     diagram.tables,
     diagram.views,
@@ -273,7 +299,23 @@ export const App: React.FC = () => {
 
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
-      <ERDCanvas />
+      {isDiagramLoaded ? (
+        <ERDCanvas />
+      ) : (
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--text-secondary)',
+            fontSize: '13px'
+          }}
+        >
+          {t('loadingDiagram')}
+        </div>
+      )}
       <TableEditModal />
       <ViewEditModal />
       <CategoryEditModal />

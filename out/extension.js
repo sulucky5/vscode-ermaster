@@ -42,23 +42,23 @@ const ermSerializer_js_1 = require("./parser/ermSerializer.js");
 function activate(context) {
     // 1. Primary Side Bar Views & Custom Editor Provider 등록
     let editorProvider;
-    const handleSidebarAction = (action) => {
+    const handleSidebarAction = async (action) => {
+        if (action.action === 'setLanguage' && typeof action.value === 'string') {
+            await vscode.workspace.getConfiguration('ermaster').update('language', action.value, vscode.ConfigurationTarget.Global);
+            editorProvider?.broadcastLanguage((0, paletteViewProvider_js_1.resolveUiLanguage)());
+            return;
+        }
         editorProvider?.dispatchSidebarAction(action);
     };
     const paletteViewProvider = new paletteViewProvider_js_1.PaletteViewProvider(context, handleSidebarAction, 'palette');
     const viewSettingsProvider = new paletteViewProvider_js_1.PaletteViewProvider(context, handleSidebarAction, 'view');
-    const menuViewProvider = new paletteViewProvider_js_1.PaletteViewProvider(context, handleSidebarAction, 'menu');
     const outlineViewProvider = new paletteViewProvider_js_1.OutlineViewProvider(context, handleSidebarAction);
-    editorProvider = new ermEditorProvider_js_1.ERMEditorProvider(context, [paletteViewProvider, viewSettingsProvider, menuViewProvider], outlineViewProvider);
+    editorProvider = new ermEditorProvider_js_1.ERMEditorProvider(context, [paletteViewProvider, viewSettingsProvider], outlineViewProvider);
     context.subscriptions.push(vscode.window.registerWebviewViewProvider(paletteViewProvider_js_1.PaletteViewProvider.viewType, paletteViewProvider, {
         webviewOptions: {
             retainContextWhenHidden: true
         }
     }), vscode.window.registerWebviewViewProvider('ermaster.viewView', viewSettingsProvider, {
-        webviewOptions: {
-            retainContextWhenHidden: true
-        }
-    }), vscode.window.registerWebviewViewProvider('ermaster.menuView', menuViewProvider, {
         webviewOptions: {
             retainContextWhenHidden: true
         }
@@ -163,7 +163,11 @@ function activate(context) {
             await vscode.commands.executeCommand('vscode.openWith', uri, ermEditorProvider_js_1.ERMEditorProvider.viewType);
         }
     });
-    context.subscriptions.push(newDiagramCmd);
+    context.subscriptions.push(newDiagramCmd, vscode.workspace.onDidChangeConfiguration((e) => {
+        if (e.affectsConfiguration('ermaster.language')) {
+            editorProvider?.broadcastLanguage((0, paletteViewProvider_js_1.resolveUiLanguage)());
+        }
+    }));
 }
 function deactivate() { }
 //# sourceMappingURL=extension.js.map

@@ -72,6 +72,7 @@ export type AlignMode =
 interface ERDState {
   diagram: ERDiagram;
   fileName: string;
+  isDiagramLoaded: boolean;
   selectedTableId: string | null;
   selectedNodeId: string | null;
   selectedNodeIds: string[];
@@ -110,10 +111,13 @@ interface ERDState {
   setTableStyle: (style: TableStyle) => void;
   setNotationLevel: (level: NotationLevel) => void;
   setCapital: (capital: boolean) => void;
+  setTableHeightSetting: (mode: 'auto' | 'fixed', fixedHeight?: number) => void;
+  setTableWidthSetting: (mode: 'auto' | 'fixed', fixedWidth?: number) => void;
   toggleLockEdit: () => void;
 
   // Tables
   updateTablePosition: (id: string, x: number, y: number) => void;
+  updateTableBounds: (id: string, x: number, y: number, width?: number, height?: number) => void;
   addTable: (table?: Partial<ERTable>) => void;
   updateTable: (table: ERTable) => void;
   deleteTable: (id: string) => void;
@@ -211,7 +215,7 @@ const initialDiagram: ERDiagram = {
   x: 0,
   y: 0,
   dictionary: [],
-  tables: [
+  tables: vscode ? [] : [
     {
       id: '0',
       physicalName: 'users',
@@ -304,7 +308,7 @@ const initialDiagram: ERDiagram = {
     }
   ],
   views: [],
-  notes: [
+  notes: vscode ? [] : [
     {
       id: '2',
       text: '쇼핑몰 주문 관리 ERD입니다.\n- 테이블 모서리의 동그란 점을 드래그하여 다른 테이블로 연결해보세요!',
@@ -411,6 +415,7 @@ function getUniqueTablePhysicalName(tables: ERTable[], preferredName?: string): 
 export const useERDStore = create<ERDState>((set, get) => ({
   diagram: initialDiagram,
   fileName: 'untitled.erm',
+  isDiagramLoaded: !vscode,
   selectedTableId: null,
   selectedNodeId: null,
   selectedNodeIds: [],
@@ -457,7 +462,8 @@ export const useERDStore = create<ERDState>((set, get) => ({
         tablespaces: diagram.tablespaces || [],
         testDataList: diagram.testDataList || []
       }),
-      fileName
+      fileName,
+      isDiagramLoaded: true
     });
   },
 
@@ -491,6 +497,34 @@ export const useERDStore = create<ERDState>((set, get) => ({
     get().notifyUpdate();
   },
 
+  setTableHeightSetting: (mode, fixedHeight) => {
+    set((state) => ({
+      diagram: {
+        ...state.diagram,
+        tableHeightMode: mode,
+        tableFixedHeight:
+          fixedHeight !== undefined
+            ? Math.max(80, Math.round(fixedHeight))
+            : state.diagram.tableFixedHeight ?? 220
+      }
+    }));
+    get().notifyUpdate();
+  },
+
+  setTableWidthSetting: (mode, fixedWidth) => {
+    set((state) => ({
+      diagram: {
+        ...state.diagram,
+        tableWidthMode: mode,
+        tableFixedWidth:
+          fixedWidth !== undefined
+            ? Math.max(160, Math.round(fixedWidth))
+            : state.diagram.tableFixedWidth ?? 240
+      }
+    }));
+    get().notifyUpdate();
+  },
+
   toggleLockEdit: () => {
     set((state) => ({
       diagram: { ...state.diagram, lockEdit: !state.diagram.lockEdit },
@@ -504,6 +538,26 @@ export const useERDStore = create<ERDState>((set, get) => ({
       diagram: fitCategoriesForDiagram({
         ...state.diagram,
         tables: state.diagram.tables.map((t) => (t.id === id ? { ...t, x, y } : t))
+      })
+    }));
+    get().notifyUpdate();
+  },
+
+  updateTableBounds: (id, x, y, width, height) => {
+    set((state) => ({
+      diagram: fitCategoriesForDiagram({
+        ...state.diagram,
+        tables: state.diagram.tables.map((t) =>
+          t.id === id
+            ? {
+                ...t,
+                x,
+                y,
+                ...(width !== undefined ? { width } : {}),
+                ...(height !== undefined ? { height } : {})
+              }
+            : t
+        )
       })
     }));
     get().notifyUpdate();
@@ -525,8 +579,8 @@ export const useERDStore = create<ERDState>((set, get) => ({
       description: '',
       x: customTable?.x ?? 150 + state.diagram.tables.length * 40,
       y: customTable?.y ?? 150 + state.diagram.tables.length * 40,
-      width: 220,
-      height: 120,
+      width: customTable?.width ?? 220,
+      height: customTable?.height,
       columns: [
         {
           id: `${newId}_col_1`,
@@ -1237,11 +1291,37 @@ export const useERDStore = create<ERDState>((set, get) => ({
   closeModelManager: () => set({ isModelManagerOpen: false }),
 
   notifyUpdate: () => {
-    if (vscode) {
-      vscode.postMessage({
-        type: 'update',
-        diagram: get().diagram
-      });
+    if (!vscode) return;
+    if (notifyUpdateTimer !== null) {
+      window.clearTimeout(notifyUpdateTimer);
     }
+    pendingDiagramUpdate = true;
+    notifyUpdateTimer = window.setTimeout(() => {
+      notifyUpdateTimer = null;
+      pendingDiagramUpdate = false;
+      vscode?.postMessage({
+        type: 'update',
+        diagram: useERDStore.getState().diagram
+      });
+    }, 300);
   }
 }));
+
+let notifyUpdateTimer: number | null = null;
+let pendingDiagramUpdate = false;
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    if (pendingDiagramUpdate && vscode) {
+      if (notifyUpdateTimer !== null) {
+        window.clearTimeout(notifyUpdateTimer);
+        notifyUpdateTimer = null;
+      }
+      pendingDiagramUpdate = false;
+      vscode.postMessage({
+        type: 'update',
+        diagram: useERDStore.getState().diagram
+      });
+    }
+  });
+}

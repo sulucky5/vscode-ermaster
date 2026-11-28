@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { vscode, ActiveTool, AlignMode } from '../store/useERDStore.js';
+import { useI18n, SupportedLang, TranslationKey } from '../i18n/translations.js';
 import {
   DatabaseType,
   NotationType,
@@ -48,6 +49,10 @@ interface PaletteViewState {
   notationLevel: NotationLevel;
   capital: boolean;
   edgeRoutingType: 'smoothstep' | 'step' | 'bezier' | 'straight';
+  tableHeightMode: 'auto' | 'fixed';
+  tableFixedHeight: number;
+  tableWidthMode: 'auto' | 'fixed';
+  tableFixedWidth: number;
   isOutlineOpen: boolean;
   selectedCount: number;
 }
@@ -68,91 +73,91 @@ const SUPPORTED_DBS: DatabaseType[] = [
   'CUBRID'
 ];
 
-const TOOL_GROUPS = [
+const getToolGroups = (t: (key: TranslationKey) => string) => [
   {
-    title: '기본',
+    title: t('groupBasic'),
     tools: [
       {
         id: 'select' as const,
-        label: '선택 (Select)',
+        label: t('toolSelect'),
         icon: MousePointer,
-        tooltip: '객체 선택 및 드래그 박스 선택'
+        tooltip: t('toolSelectTip')
       },
       {
         id: 'pan' as const,
-        label: '이동 (Pan)',
+        label: t('toolPan'),
         icon: Hand,
-        tooltip: '화면 배경을 드래그하여 이동'
+        tooltip: t('toolPanTip')
       }
     ]
   },
   {
-    title: '모델 요소',
+    title: t('groupElements'),
     tools: [
       {
         id: 'table' as const,
-        label: '테이블 (Table)',
+        label: t('toolTable'),
         icon: Table,
-        tooltip: '클릭하여 새 테이블 생성'
+        tooltip: t('toolTableTip')
       },
       {
         id: 'view' as const,
-        label: '뷰 (View)',
+        label: t('toolView'),
         icon: Eye,
-        tooltip: '클릭하여 새 뷰 생성'
+        tooltip: t('toolViewTip')
       },
       {
         id: 'note' as const,
-        label: '메모 (Note)',
+        label: t('toolNote'),
         icon: StickyNote,
-        tooltip: '클릭하여 새 메모 생성'
+        tooltip: t('toolNoteTip')
       },
       {
         id: 'category' as const,
-        label: '카테고리 (Category)',
+        label: t('toolCategory'),
         icon: Folder,
-        tooltip: '클릭하여 새 카테고리 영역 생성'
+        tooltip: t('toolCategoryTip')
       },
       {
         id: 'image' as const,
-        label: '이미지 (Image)',
+        label: t('toolImage'),
         icon: ImageIcon,
-        tooltip: '클릭하여 이미지 삽입'
+        tooltip: t('toolImageTip')
       }
     ]
   },
   {
-    title: '관계선 (Relations)',
+    title: t('groupRelations'),
     tools: [
       {
         id: 'relation_1_n' as const,
-        label: '1:N 관계',
+        label: t('toolRel1N'),
         icon: GitFork,
-        tooltip: '부모 테이블 클릭 후 자식 테이블 클릭'
+        tooltip: t('toolRel1NTip')
       },
       {
         id: 'relation_1_1' as const,
-        label: '1:1 관계',
+        label: t('toolRel11'),
         icon: Share2,
-        tooltip: '1:1 관계 연결'
+        tooltip: t('toolRel11Tip')
       },
       {
         id: 'relation_n_m' as const,
-        label: 'N:M 관계',
+        label: t('toolRelNM'),
         icon: Repeat,
-        tooltip: 'N:M 다대다 관계 연결'
+        tooltip: t('toolRelNMTip')
       },
       {
         id: 'relation_self' as const,
-        label: '자기 참조',
+        label: t('toolRelSelf'),
         icon: RotateCw,
-        tooltip: '동일 테이블 자기 참조 연결'
+        tooltip: t('toolRelSelfTip')
       },
       {
         id: 'comment_connection' as const,
-        label: '메모 연결선',
+        label: t('toolCommentConn'),
         icon: Link2,
-        tooltip: '메모와 테이블/뷰/노드 연결'
+        tooltip: t('toolCommentConnTip')
       }
     ]
   }
@@ -215,6 +220,8 @@ const actionButtonStyle = (
 };
 
 export const Palette: React.FC<{ section?: SidebarTab }> = ({ section = 'tools' }) => {
+  const { lang, t } = useI18n();
+  const toolGroups = getToolGroups(t);
   const [state, setState] = useState<PaletteViewState>({
     hasActiveEditor: false,
     fileName: '',
@@ -228,6 +235,10 @@ export const Palette: React.FC<{ section?: SidebarTab }> = ({ section = 'tools' 
     notationLevel: 'detail',
     capital: false,
     edgeRoutingType: 'smoothstep',
+    tableHeightMode: 'auto',
+    tableFixedHeight: 220,
+    tableWidthMode: 'auto',
+    tableFixedWidth: 240,
     isOutlineOpen: false,
     selectedCount: 0
   });
@@ -249,6 +260,10 @@ export const Palette: React.FC<{ section?: SidebarTab }> = ({ section = 'tools' 
           notationLevel: (message.notationLevel || 'detail') as NotationLevel,
           capital: Boolean(message.capital),
           edgeRoutingType: message.edgeRoutingType || 'smoothstep',
+          tableHeightMode: message.tableHeightMode === 'fixed' ? 'fixed' : 'auto',
+          tableFixedHeight: typeof message.tableFixedHeight === 'number' ? message.tableFixedHeight : 220,
+          tableWidthMode: message.tableWidthMode === 'fixed' ? 'fixed' : 'auto',
+          tableFixedWidth: typeof message.tableFixedWidth === 'number' ? message.tableFixedWidth : 240,
           isOutlineOpen: Boolean(message.isOutlineOpen),
           selectedCount: typeof message.selectedCount === 'number' ? message.selectedCount : 0
         });
@@ -264,7 +279,7 @@ export const Palette: React.FC<{ section?: SidebarTab }> = ({ section = 'tools' 
   }, []);
 
   const sendAction = (action: string, value?: unknown) => {
-    if (!state.hasActiveEditor) {
+    if (!state.hasActiveEditor && action !== 'setLanguage') {
       return;
     }
     if (action === 'setActiveTool' && typeof value === 'string') {
@@ -307,7 +322,7 @@ export const Palette: React.FC<{ section?: SidebarTab }> = ({ section = 'tools' 
             color: 'var(--vscode-descriptionForeground, var(--text-secondary))'
           }}
         >
-          ERMaster 파일(.erm, .erd)을 열면 사용할 수 있습니다.
+          {t('openFileHint')}
         </div>
       )}
 
@@ -315,12 +330,12 @@ export const Palette: React.FC<{ section?: SidebarTab }> = ({ section = 'tools' 
         <>
           {state.hasActiveEditor && state.lockEdit && (
             <div style={{ fontSize: '10px', fontWeight: 700, color: '#f38ba8' }}>
-              LOCKED (편집 잠금됨)
+              {t('lockedBadge')}
             </div>
           )}
             {/* Quick Add Buttons (from Toolbar) */}
             <div>
-              <div style={sectionLabelStyle}>빠른 추가</div>
+              <div style={sectionLabelStyle}>{t('quickAdd')}</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                 <button
                   type="button"
@@ -343,7 +358,7 @@ export const Palette: React.FC<{ section?: SidebarTab }> = ({ section = 'tools' 
               </div>
             </div>
 
-            {TOOL_GROUPS.map((group) => (
+            {toolGroups.map((group) => (
               <div key={group.title}>
                 <div style={sectionLabelStyle}>{group.title}</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
@@ -423,15 +438,15 @@ export const Palette: React.FC<{ section?: SidebarTab }> = ({ section = 'tools' 
                     }}
                   >
                     <Info size={12} />
-                    <span>안내</span>
+                    <span>{t('guideTitle')}</span>
                   </div>
                   {state.activeTool === 'comment_connection'
                     ? state.relationSourceId
-                      ? '2. 연결할 대상 노드를 클릭하세요.'
-                      : '1. 시작 노드(메모 등)를 클릭하세요.'
+                      ? t('guideCommentStep2')
+                      : t('guideCommentStep1')
                     : state.relationSourceId
-                    ? '2. 자식(참조할) 테이블을 클릭하세요.'
-                    : '1. 부모(기준) 테이블을 클릭하세요.'}
+                    ? t('guideRelStep2')
+                    : t('guideRelStep1')}
                 </div>
               )}
         </>
@@ -441,7 +456,7 @@ export const Palette: React.FC<{ section?: SidebarTab }> = ({ section = 'tools' 
         <>
             {/* Edit Lock & Capital */}
             <div>
-              <div style={sectionLabelStyle}>편집 상태</div>
+              <div style={sectionLabelStyle}>{t('sectionEditState')}</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                 <button
                   type="button"
@@ -451,10 +466,10 @@ export const Palette: React.FC<{ section?: SidebarTab }> = ({ section = 'tools' 
                     ...actionButtonStyle(disabled, state.lockEdit ? 'danger' : 'default'),
                     justifyContent: 'center'
                   }}
-                  title={state.lockEdit ? '편집 잠금 해제' : '편집 잠금'}
+                  title={state.lockEdit ? t('unlockTip') : t('lockTip')}
                 >
                   {state.lockEdit ? <Lock size={13} /> : <Unlock size={13} />}
-                  <span>{state.lockEdit ? '잠금' : '편집'}</span>
+                  <span>{state.lockEdit ? t('lockLabel') : t('editLabel')}</span>
                 </button>
                 <button
                   type="button"
@@ -464,16 +479,30 @@ export const Palette: React.FC<{ section?: SidebarTab }> = ({ section = 'tools' 
                     ...actionButtonStyle(disabled, state.capital ? 'primary' : 'default'),
                     justifyContent: 'center'
                   }}
-                  title="물리명 대문자 전환"
+                  title={t('capitalTip')}
                 >
-                  <span>{state.capital ? 'AA (대문자)' : 'aa (기본)'}</span>
+                  <span>{state.capital ? t('capitalOn') : t('capitalOff')}</span>
                 </button>
               </div>
             </div>
 
+            {/* Language Selector */}
+            <div>
+              <div style={sectionLabelStyle}>{t('sectionLanguage')}</div>
+              <select
+                value={lang}
+                onChange={(e) => sendAction('setLanguage', e.target.value as SupportedLang)}
+                style={selectStyle}
+              >
+                <option value="ko">한국어 (Korean)</option>
+                <option value="en">English</option>
+                <option value="ja">日本語 (Japanese)</option>
+              </select>
+            </div>
+
             {/* DBMS */}
             <div>
-              <div style={sectionLabelStyle}>대상 DBMS</div>
+              <div style={sectionLabelStyle}>{t('sectionDbms')}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Database size={14} color="var(--vscode-descriptionForeground, var(--text-secondary))" />
                 <select
@@ -493,7 +522,7 @@ export const Palette: React.FC<{ section?: SidebarTab }> = ({ section = 'tools' 
 
             {/* View Mode */}
             <div>
-              <div style={sectionLabelStyle}>보기 모드</div>
+              <div style={sectionLabelStyle}>{t('sectionViewMode')}</div>
               <div
                 style={{
                   display: 'grid',
@@ -538,7 +567,7 @@ export const Palette: React.FC<{ section?: SidebarTab }> = ({ section = 'tools' 
 
             {/* Notation, Theme, Level */}
             <div>
-              <div style={sectionLabelStyle}>표기법 (Notation)</div>
+              <div style={sectionLabelStyle}>{t('sectionNotation')}</div>
               <select
                 disabled={disabled}
                 value={state.notation}
@@ -551,7 +580,7 @@ export const Palette: React.FC<{ section?: SidebarTab }> = ({ section = 'tools' 
             </div>
 
             <div>
-              <div style={sectionLabelStyle}>디자인 테마</div>
+              <div style={sectionLabelStyle}>{t('sectionTheme')}</div>
               <select
                 disabled={disabled}
                 value={state.tableStyle}
@@ -565,25 +594,25 @@ export const Palette: React.FC<{ section?: SidebarTab }> = ({ section = 'tools' 
             </div>
 
             <div>
-              <div style={sectionLabelStyle}>표시 레벨</div>
+              <div style={sectionLabelStyle}>{t('sectionLevel')}</div>
               <select
                 disabled={disabled}
                 value={state.notationLevel}
                 onChange={(e) => sendAction('setNotationLevel', e.target.value)}
                 style={selectStyle}
               >
-                <option value="detail">상세</option>
-                <option value="title">제목만</option>
-                <option value="key">키만</option>
-                <option value="column">컬럼만</option>
-                <option value="exclude_type">타입 제외</option>
-                <option value="name_and_key">제목+키</option>
+                <option value="detail">{t('levelDetail')}</option>
+                <option value="title">{t('levelTitle')}</option>
+                <option value="key">{t('levelKey')}</option>
+                <option value="column">{t('levelColumn')}</option>
+                <option value="exclude_type">{t('levelExcludeType')}</option>
+                <option value="name_and_key">{t('levelNameAndKey')}</option>
               </select>
             </div>
 
             {/* Edge Routing */}
             <div>
-              <div style={sectionLabelStyle}>관계선 꺾임 모양</div>
+              <div style={sectionLabelStyle}>{t('sectionRouting')}</div>
               <div
                 style={{
                   display: 'grid',
@@ -597,10 +626,10 @@ export const Palette: React.FC<{ section?: SidebarTab }> = ({ section = 'tools' 
               >
                 {(
                   [
-                    { id: 'smoothstep', label: '직교' },
-                    { id: 'step', label: '계단' },
-                    { id: 'bezier', label: '곡선' },
-                    { id: 'straight', label: '직선' }
+                    { id: 'smoothstep', label: t('routeSmoothstep') },
+                    { id: 'step', label: t('routeStep') },
+                    { id: 'bezier', label: t('routeBezier') },
+                    { id: 'straight', label: t('routeStraight') }
                   ] as const
                 ).map((style) => {
                   const active = state.edgeRoutingType === style.id;
@@ -633,9 +662,159 @@ export const Palette: React.FC<{ section?: SidebarTab }> = ({ section = 'tools' 
               </div>
             </div>
 
+            {/* Table Height (Auto / Fixed) */}
+            <div>
+              <div style={sectionLabelStyle}>{t('sectionTableHeight')}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '4px',
+                    padding: '3px',
+                    borderRadius: '6px',
+                    backgroundColor: 'var(--vscode-input-background, var(--bg-tertiary))',
+                    border: '1px solid var(--vscode-panel-border, var(--border-color))'
+                  }}
+                >
+                  {(['auto', 'fixed'] as const).map((mode) => {
+                    const active = state.tableHeightMode === mode;
+                    return (
+                      <button
+                        key={mode}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() =>
+                          sendAction('setTableHeightSetting', {
+                            mode,
+                            fixedHeight: state.tableFixedHeight
+                          })
+                        }
+                        style={{
+                          padding: '5px 4px',
+                          border: 'none',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          cursor: disabled ? 'not-allowed' : 'pointer',
+                          backgroundColor: active
+                            ? 'var(--vscode-button-background, var(--accent-primary))'
+                            : 'transparent',
+                          color: active
+                            ? 'var(--vscode-button-foreground, #11111b)'
+                            : 'var(--vscode-foreground, var(--text-secondary))',
+                          opacity: disabled ? 0.45 : 1
+                        }}
+                      >
+                        {mode === 'auto' ? t('heightAuto') : t('heightFixed')}
+                      </button>
+                    );
+                  })}
+                </div>
+                {state.tableHeightMode === 'fixed' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <input
+                      type="number"
+                      min={80}
+                      step={10}
+                      disabled={disabled}
+                      value={state.tableFixedHeight}
+                      onChange={(e) => {
+                        const val = Math.max(80, Number(e.target.value) || 220);
+                        setState((prev) => ({ ...prev, tableFixedHeight: val }));
+                        sendAction('setTableHeightSetting', { mode: 'fixed', fixedHeight: val });
+                      }}
+                      style={{
+                        ...selectStyle,
+                        width: '90px'
+                      }}
+                    />
+                    <span style={{ fontSize: '11px', color: 'var(--vscode-descriptionForeground, var(--text-muted))' }}>
+                      px
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Table Width (Auto / Fixed) */}
+            <div>
+              <div style={sectionLabelStyle}>{t('sectionTableWidth')}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '4px',
+                    padding: '3px',
+                    borderRadius: '6px',
+                    backgroundColor: 'var(--vscode-input-background, var(--bg-tertiary))',
+                    border: '1px solid var(--vscode-panel-border, var(--border-color))'
+                  }}
+                >
+                  {(['auto', 'fixed'] as const).map((mode) => {
+                    const active = state.tableWidthMode === mode;
+                    return (
+                      <button
+                        key={mode}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() =>
+                          sendAction('setTableWidthSetting', {
+                            mode,
+                            fixedWidth: state.tableFixedWidth
+                          })
+                        }
+                        style={{
+                          padding: '5px 4px',
+                          border: 'none',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          cursor: disabled ? 'not-allowed' : 'pointer',
+                          backgroundColor: active
+                            ? 'var(--vscode-button-background, var(--accent-primary))'
+                            : 'transparent',
+                          color: active
+                            ? 'var(--vscode-button-foreground, #11111b)'
+                            : 'var(--vscode-foreground, var(--text-secondary))',
+                          opacity: disabled ? 0.45 : 1
+                        }}
+                      >
+                        {mode === 'auto' ? t('heightAuto') : t('heightFixed')}
+                      </button>
+                    );
+                  })}
+                </div>
+                {state.tableWidthMode === 'fixed' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <input
+                      type="number"
+                      min={160}
+                      step={10}
+                      disabled={disabled}
+                      value={state.tableFixedWidth}
+                      onChange={(e) => {
+                        const val = Math.max(160, Number(e.target.value) || 240);
+                        setState((prev) => ({ ...prev, tableFixedWidth: val }));
+                        sendAction('setTableWidthSetting', { mode: 'fixed', fixedWidth: val });
+                      }}
+                      style={{
+                        ...selectStyle,
+                        width: '90px'
+                      }}
+                    />
+                    <span style={{ fontSize: '11px', color: 'var(--vscode-descriptionForeground, var(--text-muted))' }}>
+                      px
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Align & Match Size */}
             <div>
-              <div style={sectionLabelStyle}>정렬 / 크기 맞추기 ({state.selectedCount})</div>
+              <div style={sectionLabelStyle}>{t('sectionAlign')} ({state.selectedCount})</div>
               <select
                 value=""
                 disabled={editDisabled || state.selectedCount < 2}
@@ -650,15 +829,15 @@ export const Palette: React.FC<{ section?: SidebarTab }> = ({ section = 'tools' 
                   cursor: editDisabled || state.selectedCount < 2 ? 'not-allowed' : 'pointer'
                 }}
               >
-                <option value="">2개 이상 선택 후 동작 선택...</option>
-                <option value="left">좌측 정렬</option>
-                <option value="center">가운데 정렬</option>
-                <option value="right">우측 정렬</option>
-                <option value="top">상단 정렬</option>
-                <option value="middle">중앙 정렬</option>
-                <option value="bottom">하단 정렬</option>
-                <option value="matchWidth">너비 맞추기</option>
-                <option value="matchHeight">높이 맞추기</option>
+                <option value="">{t('alignPlaceholder')}</option>
+                <option value="left">{t('alignLeft')}</option>
+                <option value="center">{t('alignCenter')}</option>
+                <option value="right">{t('alignRight')}</option>
+                <option value="top">{t('alignTop')}</option>
+                <option value="middle">{t('alignMiddle')}</option>
+                <option value="bottom">{t('alignBottom')}</option>
+                <option value="matchWidth">{t('alignMatchWidth')}</option>
+                <option value="matchHeight">{t('alignMatchHeight')}</option>
               </select>
             </div>
         </>

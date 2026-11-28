@@ -1,0 +1,8 @@
+{
+  "views.tools": "ツール",
+  "views.view": "表示",
+  "views.outline": "アウトライン",
+  "editor.displayName": "ERMaster ERD エディター",
+  "command.newDiagram.title": "新規 ER 図を作成 (.erm)",
+  "config.language.description": "ERMaster エディターの UI 言語 (auto は VS Code の表示言語に従います)"
+}

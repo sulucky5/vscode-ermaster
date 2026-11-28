@@ -6,6 +6,7 @@ import {
   Server,
   Layers,
   Table,
+  Eye,
   Search,
   Code,
   Download,
@@ -29,6 +30,7 @@ import {
   ReactFlowProvider
 } from '@xyflow/react';
 import { useERDStore } from '../store/useERDStore.js';
+import { useI18n } from '../i18n/translations.js';
 import { TableNode } from './TableNode.js';
 import { ViewNode } from './ViewNode.js';
 import { NoteNode } from './NoteNode.js';
@@ -89,25 +91,24 @@ const CanvasScrollbars: React.FC<CanvasScrollbarsProps> = ({ nodes, containerRef
   const viewRight = viewLeft + viewW;
   const viewBottom = viewTop + viewH;
 
-  let minX = 0;
-  let minY = 0;
-  let maxX = 1200;
-  let maxY = 900;
-
-  if (nodes.length > 0) {
-    minX = Infinity;
-    minY = Infinity;
-    maxX = -Infinity;
-    maxY = -Infinity;
+  const { minX, minY, maxX, maxY } = useMemo(() => {
+    if (nodes.length === 0) {
+      return { minX: 0, minY: 0, maxX: 1200, maxY: 900 };
+    }
+    let lx = Infinity;
+    let ly = Infinity;
+    let rx = -Infinity;
+    let ry = -Infinity;
     for (const n of nodes) {
       const w = n.measured?.width ?? (n.style?.width as number) ?? 240;
       const h = n.measured?.height ?? (n.style?.height as number) ?? 140;
-      minX = Math.min(minX, n.position.x);
-      minY = Math.min(minY, n.position.y);
-      maxX = Math.max(maxX, n.position.x + w);
-      maxY = Math.max(maxY, n.position.y + h);
+      if (n.position.x < lx) lx = n.position.x;
+      if (n.position.y < ly) ly = n.position.y;
+      if (n.position.x + w > rx) rx = n.position.x + w;
+      if (n.position.y + h > ry) ry = n.position.y + h;
     }
-  }
+    return { minX: lx, minY: ly, maxX: rx, maxY: ry };
+  }, [nodes]);
 
   const margin = 400;
   const worldLeft = Math.min(minX - margin, viewLeft);
@@ -268,6 +269,7 @@ const CanvasScrollbars: React.FC<CanvasScrollbarsProps> = ({ nodes, containerRef
 };
 
 const ERDCanvasInner: React.FC = () => {
+  const { t } = useI18n();
   const diagram = useERDStore((state) => state.diagram);
   const activeTool = useERDStore((state) => state.activeTool);
   const setActiveTool = useERDStore((state) => state.setActiveTool);
@@ -378,14 +380,38 @@ const ERDCanvasInner: React.FC = () => {
         zIndex: -1
       }));
 
+    const identifyingChildIds = new Set<string>();
+    for (const r of diagram.relations) {
+      if (r.referenceForPK) {
+        identifyingChildIds.add(r.targetTableId);
+      }
+    }
+
+    const isFixedMode = diagram.tableHeightMode === 'fixed';
+    const defaultFixedH = Math.max(80, diagram.tableFixedHeight ?? 220);
+    const isFixedWidthMode = diagram.tableWidthMode === 'fixed';
+    const defaultFixedW = Math.max(160, diagram.tableFixedWidth ?? 240);
+
     const tableNodes: Node[] = diagram.tables
       .filter((t) => !visibleIds || visibleIds.has(t.id))
-      .map((table: ERTable) => ({
-        id: table.id,
-        type: 'tableNode',
-        position: { x: table.x, y: table.y },
-        data: { table }
-      }));
+      .map((table: ERTable) => {
+        const tableW = isFixedWidthMode
+          ? Math.max(160, table.width && table.width > 0 ? table.width : defaultFixedW)
+          : undefined;
+        const tableH = isFixedMode
+          ? Math.max(80, table.height && table.height > 0 ? table.height : defaultFixedH)
+          : undefined;
+        const nodeStyle: React.CSSProperties = {};
+        if (tableW !== undefined) nodeStyle.width = tableW;
+        if (tableH !== undefined) nodeStyle.height = tableH;
+        return {
+          id: table.id,
+          type: 'tableNode',
+          position: { x: table.x, y: table.y },
+          ...(Object.keys(nodeStyle).length > 0 ? { style: nodeStyle } : {}),
+          data: { table, isIdentifyingChild: identifyingChildIds.has(table.id) }
+        };
+      });
 
     const viewNodes: Node[] = (diagram.views || [])
       .filter((v) => !visibleIds || visibleIds.has(v.id))
@@ -438,6 +464,10 @@ const ERDCanvasInner: React.FC = () => {
     diagram.relations,
     diagram.images,
     diagram.tables,
+    diagram.tableHeightMode,
+    diagram.tableFixedHeight,
+    diagram.tableWidthMode,
+    diagram.tableFixedWidth,
     diagram.views,
     diagram.notes,
     diagram.modelProperties
@@ -545,7 +575,9 @@ const ERDCanvasInner: React.FC = () => {
         markerEnd: markerEndId,
         data: {
           edgeIndex: edgeIndex >= 0 ? edgeIndex : 0,
-          totalEdges
+          totalEdges,
+          relation: rel,
+          bendpoints: rel.bendpoints
         },
         style: {
           stroke: isIdentifying ? '#f38ba8' : '#89b4fa',
@@ -931,6 +963,7 @@ const ERDCanvasInner: React.FC = () => {
         onNodeClick={handleNodeClick}
         onSelectionChange={({ nodes: sel }) => setSelectedNodeIds(sel.map((n) => n.id))}
         connectionMode={ConnectionMode.Loose}
+        onlyRenderVisibleElements
         fitView
         minZoom={0.2}
         maxZoom={2.5}
@@ -951,6 +984,40 @@ const ERDCanvasInner: React.FC = () => {
         />
       </ReactFlow>
       <CanvasScrollbars nodes={nodes} containerRef={canvasContainerRef} />
+
+      {/* Diagram Element Count HUD */}
+      <div
+        className="no-print"
+        style={{
+          position: 'absolute',
+          top: 12,
+          left: 12,
+          zIndex: 40,
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '10px',
+          padding: '5px 10px',
+          borderRadius: '8px',
+          backgroundColor: 'rgba(30, 30, 46, 0.82)',
+          backdropFilter: 'blur(6px)',
+          border: '1px solid rgba(69, 71, 90, 0.8)',
+          color: '#cdd6f4',
+          fontSize: '11px',
+          fontWeight: 600,
+          pointerEvents: 'none',
+          userSelect: 'none'
+        }}
+      >
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+          <Table size={12} color="#89b4fa" />
+          <span>{t('hudTable')} {diagram.tables.length}</span>
+        </span>
+        <span style={{ color: 'rgba(166, 173, 200, 0.45)' }}>|</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+          <Eye size={12} color="#a6e3a1" />
+          <span>{t('hudView')} {(diagram.views || []).length}</span>
+        </span>
+      </div>
 
       {contextMenu && (
         <div
@@ -977,58 +1044,58 @@ const ERDCanvasInner: React.FC = () => {
         >
           {[
             {
-              label: '새 테이블 추가',
+              label: t('ctxAddTable'),
               icon: Plus,
               disabled: Boolean(diagram.lockEdit),
               onClick: () => addTable({ x: contextMenu.flowX, y: contextMenu.flowY })
             },
             {
-              label: '새 메모 추가',
+              label: t('ctxAddNote'),
               icon: StickyNote,
               disabled: Boolean(diagram.lockEdit),
               onClick: () => addNote({ x: contextMenu.flowX, y: contextMenu.flowY })
             },
             { divider: true as const },
             {
-              label: '파일 가져오기 (.erm/.sql)',
+              label: t('ctxImportFile'),
               icon: FileUp,
               onClick: () => openImportFileModal()
             },
             {
-              label: 'DB 가져오기 (JDBC)',
+              label: t('ctxImportDb'),
               icon: Server,
               onClick: () => openImportDBModal()
             },
             { divider: true as const },
             {
-              label: '모델 관리',
+              label: t('ctxModelManager'),
               icon: Layers,
               onClick: () => openModelManager('dictionary')
             },
             {
-              label: '모든 속성 일괄 편집',
+              label: t('ctxEditAll'),
               icon: Table,
               disabled: Boolean(diagram.lockEdit),
               onClick: () => openEditAllModal()
             },
             {
-              label: '검색 (Ctrl+F)',
+              label: t('ctxSearch'),
               icon: Search,
               onClick: () => openSearchModal()
             },
             { divider: true as const },
             {
-              label: 'DDL 미리보기 / 생성',
+              label: t('ctxDdl'),
               icon: Code,
               onClick: () => openDDLModal()
             },
             {
-              label: '내보내기 (Export)',
+              label: t('ctxExport'),
               icon: Download,
               onClick: () => openExportModal()
             },
             {
-              label: '인쇄',
+              label: t('ctxPrint'),
               icon: Printer,
               onClick: () => window.print()
             }

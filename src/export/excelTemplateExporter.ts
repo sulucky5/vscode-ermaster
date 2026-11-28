@@ -100,7 +100,10 @@ export async function exportExcelFromTemplate(
         }),
         indexes: (t.indexes || []).map((idx) => ({
           name: idx.name || '',
-          columns: (idx.columns || []).map((ic) => ic.columnName || '')
+          columns: (idx.columns || []).map((ic) => {
+            const col = t.columns.find((c) => c.id === ic.columnId);
+            return col ? col.physicalName : ic.columnId || '';
+          })
         })),
         complexUniqueKeys: (t.complexUniqueKeys || []).map((cuk) => ({
           name: cuk.name || '',
@@ -116,7 +119,12 @@ export async function exportExcelFromTemplate(
         description: idx.description || '',
         tablePhysical: t.physicalName || '',
         tableLogical: t.logicalName || '',
-        columns: (idx.columns || []).map((ic) => ic.columnName).join(', ')
+        columns: (idx.columns || [])
+          .map((ic) => {
+            const col = t.columns.find((c) => c.id === ic.columnId);
+            return col ? col.physicalName : ic.columnId || '';
+          })
+          .join(', ')
       }))
     ),
     views: (diagram.views || []).map((v) => ({

@@ -74,7 +74,7 @@ export const CategoryEditModal: React.FC = () => {
   };
 
   return (
-    <div className="modal-overlay" onClick={closeCategoryModal}>
+    <div className="modal-overlay">
       <div className="modal-content" style={{ maxWidth: '520px' }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

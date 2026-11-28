@@ -1,19 +1,25 @@
 import React, { memo } from 'react';
-import { Handle, Position, NodeProps } from '@xyflow/react';
-import { ERTable, ERColumn } from '../types/erm.types.js';
+import { Handle, Position, NodeProps, NodeResizer } from '@xyflow/react';
+import { ERTable, ERColumn, ColumnGroup } from '../types/erm.types.js';
 import { useERDStore } from '../store/useERDStore.js';
 import { Key, Database } from 'lucide-react';
 
+const EMPTY_COLUMN_GROUPS: ColumnGroup[] = [];
+
 export const TableNode: React.FC<NodeProps> = memo(({ data, selected }) => {
   const table = data.table as ERTable;
-  const diagram = useERDStore((state) => state.diagram);
-  const viewMode = diagram.viewMode;
-  const notation = diagram.notation || 'IE';
-  const tableStyle = diagram.tableStyle || 'frame';
-  const notationLevel = diagram.notationLevel || 'detail';
-  const capital = Boolean(diagram.capital);
-  const columnGroups = diagram.columnGroups || [];
+  const viewMode = useERDStore((state) => state.diagram.viewMode);
+  const notation = useERDStore((state) => state.diagram.notation || 'IE');
+  const tableStyle = useERDStore((state) => state.diagram.tableStyle || 'frame');
+  const notationLevel = useERDStore((state) => state.diagram.notationLevel || 'detail');
+  const capital = useERDStore((state) => Boolean(state.diagram.capital));
+  const columnGroups = useERDStore((state) => state.diagram.columnGroups) || EMPTY_COLUMN_GROUPS;
+  const tableHeightMode = useERDStore((state) => state.diagram.tableHeightMode || 'auto');
+  const tableFixedHeight = useERDStore((state) => state.diagram.tableFixedHeight ?? 220);
+  const tableWidthMode = useERDStore((state) => state.diagram.tableWidthMode || 'auto');
+  const lockEdit = useERDStore((state) => Boolean(state.diagram.lockEdit));
   const openTableModal = useERDStore((state) => state.openTableModal);
+  const updateTableBounds = useERDStore((state) => state.updateTableBounds);
 
   const attachedGroups = (table.columnGroupIds || [])
     .map((id) => columnGroups.find((g) => g.id === id))
@@ -54,12 +60,10 @@ export const TableNode: React.FC<NodeProps> = memo(({ data, selected }) => {
     return t;
   };
 
-  const relationSourceId = useERDStore((state) => state.relationSourceId);
-  const isRelationSource = relationSourceId === table.id;
+  const isRelationSource = useERDStore((state) => state.relationSourceId === table.id);
 
   const isIdentifyingChild =
-    notation === 'IDEF1X' &&
-    diagram.relations.some((r) => r.targetTableId === table.id && r.referenceForPK);
+    notation === 'IDEF1X' && Boolean(data.isIdentifyingChild);
 
   // Filter columns according to notationLevel
   const filterCols = (cols: ERColumn[]) => {
@@ -135,19 +139,46 @@ export const TableNode: React.FC<NodeProps> = memo(({ data, selected }) => {
         )}
         <span>{getColDisplayName(col)}</span>
         {getColSubName(col) && (
-          <span style={{ fontSize: '10px', color: '#a6adc8' }}>{getColSubName(col)}</span>
+          <span
+            style={{
+              fontSize: '10px',
+              color: '#a6adc8',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              minWidth: 0
+            }}
+          >
+            {getColSubName(col)}
+          </span>
         )}
       </div>
       {showTypes && <span className="col-type">{formatType(col)}</span>}
     </div>
   );
 
+  const hasFixedWidth = tableWidthMode === 'fixed';
+  const effectiveFixedHeight =
+    tableHeightMode === 'fixed'
+      ? Math.max(80, table.height && table.height > 0 ? table.height : tableFixedHeight)
+      : undefined;
+  const hasFixedHeight = effectiveFixedHeight !== undefined;
+
   return (
     <div
       className={`table-node ${selected ? 'selected' : ''} ${isRelationSource ? 'relation-source' : ''}`}
       onDoubleClick={() => openTableModal(table)}
       style={{
-        width: table.width || 240,
+        width: hasFixedWidth ? '100%' : 'max-content',
+        minWidth: hasFixedWidth ? 160 : 220,
+        ...(hasFixedHeight
+          ? {
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }
+          : {}),
         position: 'relative',
         ...themeStyle,
         ...(customRgb && !selected && !isRelationSource
@@ -161,6 +192,23 @@ export const TableNode: React.FC<NodeProps> = memo(({ data, selected }) => {
           : {})
       }}
     >
+      <NodeResizer
+        isVisible={Boolean(selected) && !lockEdit}
+        minWidth={160}
+        minHeight={80}
+        color={customRgb ? `rgb(${customRgb})` : '#89b4fa'}
+        handleStyle={{ width: 8, height: 8, borderRadius: 2 }}
+        lineStyle={{ borderWidth: 1 }}
+        onResizeEnd={(_event, params) => {
+          updateTableBounds(
+            table.id,
+            Math.round(params.x),
+            Math.round(params.y),
+            hasFixedWidth ? Math.round(params.width) : undefined,
+            hasFixedHeight ? Math.round(params.height) : undefined
+          );
+        }}
+      />
       <Handle type="source" position={Position.Top} id="top" className="table-border-handle table-border-handle-top" title="상단 변 연결" />
       <Handle type="source" position={Position.Bottom} id="bottom" className="table-border-handle table-border-handle-bottom" title="하단 변 연결" />
       <Handle type="source" position={Position.Left} id="left" className="table-border-handle table-border-handle-left" title="좌측 변 연결" />
@@ -168,19 +216,41 @@ export const TableNode: React.FC<NodeProps> = memo(({ data, selected }) => {
 
       <div className="table-node-header" style={headerStyle}>
         <div className="table-node-title">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
             <Database
               size={14}
+              style={{ flexShrink: 0 }}
               color={customRgb ? `rgb(${customRgb})` : tableStyle === 'funny' ? '#cba6f7' : '#89b4fa'}
             />
-            <span>{getDisplayName()}</span>
+            <span
+              style={{
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                minWidth: 0
+              }}
+              title={getDisplayName()}
+            >
+              {getDisplayName()}
+            </span>
           </div>
-          {getSubName() && <span className="table-node-logical">{getSubName()}</span>}
+          {getSubName() && (
+            <span className="table-node-logical" title={getSubName() || undefined}>
+              {getSubName()}
+            </span>
+          )}
         </div>
       </div>
 
       {showBody && (
-        <div className="table-node-columns">
+        <div
+          className={hasFixedHeight ? 'table-node-columns nowheel' : 'table-node-columns'}
+          style={
+            hasFixedHeight
+              ? { flex: 1, minHeight: 0, overflowY: 'auto' }
+              : { overflowY: 'visible' }
+          }
+        >
           {pkCols.map((col) => renderColumnRow(col))}
           {notation === 'IDEF1X' && pkCols.length > 0 && nonPkCols.length > 0 && (
             <div style={{ borderTop: '1px solid var(--border-color)', margin: '2px 0' }} />

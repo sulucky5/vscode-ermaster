@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { vscode } from '../store/useERDStore.js';
+import { useI18n } from '../i18n/translations.js';
 import {
   Table,
   Eye,
@@ -40,6 +41,7 @@ interface OutlineState {
 }
 
 export const OutlinePanel: React.FC = () => {
+  const { t } = useI18n();
   const [data, setData] = useState<OutlineState>({
     hasActiveEditor: false,
     tables: [],
@@ -133,13 +135,13 @@ export const OutlinePanel: React.FC = () => {
             letterSpacing: '0.4px'
           }}
         >
-          DIAGRAM OUTLINE
+          {t('outlineTitle')}
         </span>
         <button
           type="button"
           disabled={!data.hasActiveEditor}
           onClick={() => setSortBy(sortBy === 'physical' ? 'logical' : 'physical')}
-          title="정렬 기준 전환 (물리명 / 논리명)"
+          title={t('sortTip')}
           style={{
             background: 'none',
             border: '1px solid var(--vscode-panel-border, var(--border-color))',
@@ -155,7 +157,7 @@ export const OutlinePanel: React.FC = () => {
           }}
         >
           <ArrowUpDown size={10} />
-          <span>{sortBy === 'physical' ? '물리명' : '논리명'}</span>
+          <span>{sortBy === 'physical' ? t('sortPhysical') : t('sortLogical')}</span>
         </button>
       </div>
 
@@ -171,7 +173,7 @@ export const OutlinePanel: React.FC = () => {
             color: 'var(--vscode-descriptionForeground, var(--text-secondary))'
           }}
         >
-          ERMaster 파일(.erm, .erd)을 열면 아웃라인이 표시됩니다.
+          {t('outlineEmptyHint')}
         </div>
       ) : (
         <>
@@ -429,16 +431,16 @@ export const OutlinePanel: React.FC = () => {
             }}
           >
             <div style={{ cursor: 'pointer' }} onClick={() => sendAction('openModelManager', 'sequences')}>
-              시퀀스: {data.sequencesCount}
+              {t('sequences')}: {data.sequencesCount}
             </div>
             <div style={{ cursor: 'pointer' }} onClick={() => sendAction('openModelManager', 'triggers')}>
-              트리거: {data.triggersCount}
+              {t('triggers')}: {data.triggersCount}
             </div>
             <div style={{ cursor: 'pointer' }} onClick={() => sendAction('openModelManager', 'tablespaces')}>
-              테이블스페이스: {data.tablespacesCount}
+              {t('tablespaces')}: {data.tablespacesCount}
             </div>
             <div style={{ cursor: 'pointer' }} onClick={() => sendAction('openModelManager', 'columnGroups')}>
-              컬럼 그룹: {data.columnGroupsCount}
+              {t('columnGroups')}: {data.columnGroupsCount}
             </div>
           </div>
         </>

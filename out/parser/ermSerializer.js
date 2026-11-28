@@ -276,7 +276,7 @@ function serializeERMXml(diagram) {
         const tableId = table.id || String(tIndex);
         lines.push(`\t\t<table>`);
         lines.push(`\t\t\t<id>${escapeXml(tableId)}</id>`);
-        lines.push(`\t\t\t<height>${table.height || 100}</height>`);
+        lines.push(`\t\t\t<height>${table.height && table.height > 0 ? Math.round(table.height) : -1}</height>`);
         lines.push(`\t\t\t<width>${table.width || 160}</width>`);
         lines.push(`\t\t\t<font_name></font_name>`);
         lines.push(`\t\t\t<font_size>9</font_size>`);

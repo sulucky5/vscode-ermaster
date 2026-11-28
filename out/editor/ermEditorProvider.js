@@ -71,6 +71,15 @@ class ERMEditorProvider {
             target.webview.postMessage(action);
         }
     }
+    broadcastLanguage(lang) {
+        for (const panel of this.panelStates.keys()) {
+            panel.webview.postMessage({ type: 'setLanguage', lang });
+        }
+        for (const provider of this.paletteViewProviders) {
+            provider.postLanguage(lang);
+        }
+        this.outlineViewProvider?.postLanguage(lang);
+    }
     syncPaletteView() {
         const target = this.activePanel ?? this.panelStates.keys().next().value;
         if (this.paletteViewProviders.length > 0) {
@@ -186,6 +195,27 @@ class ERMEditorProvider {
                     sendTemplates();
                     break;
                 }
+                case 'export:downloadTemplate': {
+                    const builtins = (0, excelTemplateExporter_js_1.getBuiltinTemplates)(this.context.extensionPath);
+                    const customs = this.context.globalState.get('ermaster.customExcelTemplates', []);
+                    const all = [...builtins, ...customs];
+                    const chosen = all.find((t) => t.id === message.templateId) ||
+                        all.find((t) => t.id === 'template_ko.xls') ||
+                        all[0];
+                    if (!chosen || !fs.existsSync(chosen.filePath)) {
+                        vscode.window.showErrorMessage('다운로드할 템플릿 파일을 찾을 수 없습니다.');
+                        break;
+                    }
+                    const saveUri = await vscode.window.showSaveDialog({
+                        defaultUri: vscode.Uri.file(path.join(path.dirname(document.fileName), path.basename(chosen.filePath))),
+                        filters: { 'Excel Template (.xls)': ['xls'] }
+                    });
+                    if (saveUri) {
+                        fs.copyFileSync(chosen.filePath, saveUri.fsPath);
+                        vscode.window.showInformationMessage(`템플릿 저장 완료: ${path.basename(saveUri.fsPath)}`);
+                    }
+                    break;
+                }
                 case 'paletteState': {
                     this.panelStates.set(webviewPanel, {
                         hasActiveEditor: true,
@@ -200,6 +230,10 @@ class ERMEditorProvider {
                         notationLevel: typeof message.notationLevel === 'string' ? message.notationLevel : undefined,
                         capital: Boolean(message.capital),
                         edgeRoutingType: typeof message.edgeRoutingType === 'string' ? message.edgeRoutingType : undefined,
+                        tableHeightMode: message.tableHeightMode === 'fixed' ? 'fixed' : 'auto',
+                        tableFixedHeight: typeof message.tableFixedHeight === 'number' ? message.tableFixedHeight : 220,
+                        tableWidthMode: message.tableWidthMode === 'fixed' ? 'fixed' : 'auto',
+                        tableFixedWidth: typeof message.tableFixedWidth === 'number' ? message.tableFixedWidth : 240,
                         isOutlineOpen: Boolean(message.isOutlineOpen),
                         selectedCount: typeof message.selectedCount === 'number' ? message.selectedCount : 0
                     });
@@ -417,7 +451,7 @@ class ERMEditorProvider {
                             all[0];
                         if (chosen && fs.existsSync(chosen.filePath)) {
                             try {
-                                await (0, excelTemplateExporter_js_1.exportExcelFromTemplate)(this.context.extensionPath, message.diagram, chosen.filePath, uri.fsPath, Boolean(message.useLogicalNameAsSheetName));
+                                await (0, excelTemplateExporter_js_1.exportExcelFromTemplate)(this.context.extensionPath, message.diagram, chosen.filePath, uri.fsPath, Boolean(message.useLogicalNameAsSheetName), typeof message.imageDataUrl === 'string' ? message.imageDataUrl : undefined);
                                 vscode.window.showInformationMessage(`Excel 명세서 저장 완료 (${chosen.id}): ${path.basename(uri.fsPath)}`);
                                 break;
                             }

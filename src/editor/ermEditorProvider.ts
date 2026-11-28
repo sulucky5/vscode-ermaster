@@ -13,7 +13,8 @@ import {
   OutlineViewProvider,
   PaletteState,
   PaletteViewProvider,
-  SidebarActionMessage
+  SidebarActionMessage,
+  SupportedLang
 } from './paletteViewProvider.js';
 import {
   generateExcelXml,
@@ -55,6 +56,16 @@ export class ERMEditorProvider implements vscode.CustomTextEditorProvider {
     if (target) {
       target.webview.postMessage(action);
     }
+  }
+
+  public broadcastLanguage(lang: SupportedLang): void {
+    for (const panel of this.panelStates.keys()) {
+      panel.webview.postMessage({ type: 'setLanguage', lang });
+    }
+    for (const provider of this.paletteViewProviders) {
+      provider.postLanguage(lang);
+    }
+    this.outlineViewProvider?.postLanguage(lang);
   }
 
   private syncPaletteView(): void {
@@ -230,6 +241,10 @@ export class ERMEditorProvider implements vscode.CustomTextEditorProvider {
             notationLevel: typeof message.notationLevel === 'string' ? message.notationLevel : undefined,
             capital: Boolean(message.capital),
             edgeRoutingType: typeof message.edgeRoutingType === 'string' ? message.edgeRoutingType : undefined,
+            tableHeightMode: message.tableHeightMode === 'fixed' ? 'fixed' : 'auto',
+            tableFixedHeight: typeof message.tableFixedHeight === 'number' ? message.tableFixedHeight : 220,
+            tableWidthMode: message.tableWidthMode === 'fixed' ? 'fixed' : 'auto',
+            tableFixedWidth: typeof message.tableFixedWidth === 'number' ? message.tableFixedWidth : 240,
             isOutlineOpen: Boolean(message.isOutlineOpen),
             selectedCount: typeof message.selectedCount === 'number' ? message.selectedCount : 0
           });

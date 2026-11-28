@@ -47,9 +47,19 @@ export const ViewNode: React.FC<NodeProps> = memo(({ data, selected }) => {
         style={{ background: 'linear-gradient(135deg, rgba(166, 227, 161, 0.2), rgba(148, 226, 213, 0.15))' }}
       >
         <div className="table-node-title">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Eye size={14} color="#a6e3a1" />
-            <span>{displayName}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+            <Eye size={14} color="#a6e3a1" style={{ flexShrink: 0 }} />
+            <span
+              style={{
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                minWidth: 0
+              }}
+              title={displayName}
+            >
+              {displayName}
+            </span>
             <span
               style={{
                 fontSize: '9px',
@@ -57,13 +67,18 @@ export const ViewNode: React.FC<NodeProps> = memo(({ data, selected }) => {
                 borderRadius: '4px',
                 backgroundColor: 'rgba(166, 227, 161, 0.2)',
                 color: '#a6e3a1',
-                fontWeight: 700
+                fontWeight: 700,
+                flexShrink: 0
               }}
             >
               VIEW
             </span>
           </div>
-          {subName && <span className="table-node-logical">{subName}</span>}
+          {subName && (
+            <span className="table-node-logical" title={subName}>
+              {subName}
+            </span>
+          )}
         </div>
       </div>
 

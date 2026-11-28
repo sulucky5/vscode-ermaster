@@ -2,7 +2,7 @@
   "name": "ermaster-vscode",
   "displayName": "ERMaster for VS Code",
   "description": "A modern ER Diagram editor for VS Code compatible with Eclipse ERMaster (.erm)",
-  "version": "0.1.29",
+  "version": "0.1.47",
   "publisher": "sulucky5",
   "license": "Apache-2.0",
   "icon": "media/icon.png",
@@ -29,24 +29,24 @@
         {
           "type": "webview",
           "id": "ermaster.paletteView",
-          "name": "도구"
+          "name": "%views.tools%"
         },
         {
           "type": "webview",
           "id": "ermaster.viewView",
-          "name": "보기"
+          "name": "%views.view%"
         },
         {
           "type": "webview",
           "id": "ermaster.outlineView",
-          "name": "Outline"
+          "name": "%views.outline%"
         }
       ]
     },
     "customEditors": [
       {
         "viewType": "ermaster.editor",
-        "displayName": "ERMaster ERD Editor",
+        "displayName": "%editor.displayName%",
         "selector": [
           {
             "filenamePattern": "*.erm"
@@ -61,10 +61,26 @@
     "commands": [
       {
         "command": "ermaster.newDiagram",
-        "title": "ERMaster: Create New ER Diagram (.erm)",
+        "title": "%command.newDiagram.title%",
         "category": "ERMaster"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "ERMaster",
+      "properties": {
+        "ermaster.language": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "ko",
+            "en",
+            "ja"
+          ],
+          "default": "auto",
+          "description": "%config.language.description%"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm version patch --no-git-tag-version && npm run build",

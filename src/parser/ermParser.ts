@@ -344,7 +344,10 @@ export function parseERMXml(xmlString: string): ERDiagram {
       x: parseNumber(t.x, 50),
       y: parseNumber(t.y, 50),
       width: parseOptionalNumber(t.width) || 160,
-      height: parseOptionalNumber(t.height) || 100,
+      height: (() => {
+        const h = parseOptionalNumber(t.height);
+        return h !== undefined && h > 0 ? h : undefined;
+      })(),
       color: parseColor(t.color),
       columns,
       columnGroupIds: columnGroupIds.length > 0 ? columnGroupIds : undefined,
