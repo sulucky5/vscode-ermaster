@@ -79,6 +79,7 @@ interface ERDState {
   focusNodeId: string | null;
   selectAllTrigger: number;
   isOutlineOpen: boolean;
+  showMiniMap: boolean;
   isSearchModalOpen: boolean;
   isEditAllModalOpen: boolean;
   clipboard: { tables: ERTable[]; views: ERView[]; notes: ERNote[] } | null;
@@ -176,6 +177,8 @@ interface ERDState {
   requestSelectAll: () => void;
   alignNodes: (mode: AlignMode) => void;
   toggleOutline: () => void;
+  toggleMiniMap: () => void;
+  setShowMiniMap: (show: boolean) => void;
   openSearchModal: () => void;
   closeSearchModal: () => void;
   openEditAllModal: () => void;
@@ -425,6 +428,7 @@ export const useERDStore = create<ERDState>((set, get) => ({
   focusNodeId: null,
   selectAllTrigger: 0,
   isOutlineOpen: true,
+  showMiniMap: true,
   isSearchModalOpen: false,
   isEditAllModalOpen: false,
   clipboard: null,
@@ -1107,6 +1111,8 @@ export const useERDStore = create<ERDState>((set, get) => ({
   requestFocusNode: (focusNodeId) => set({ focusNodeId }),
   requestSelectAll: () => set((state) => ({ selectAllTrigger: state.selectAllTrigger + 1 })),
   toggleOutline: () => set((state) => ({ isOutlineOpen: !state.isOutlineOpen })),
+  toggleMiniMap: () => set((state) => ({ showMiniMap: !state.showMiniMap })),
+  setShowMiniMap: (showMiniMap) => set({ showMiniMap }),
   openSearchModal: () => set({ isSearchModalOpen: true }),
   closeSearchModal: () => set({ isSearchModalOpen: false }),
   openEditAllModal: () => {

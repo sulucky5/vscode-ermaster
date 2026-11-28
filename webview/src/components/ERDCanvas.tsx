@@ -7,6 +7,8 @@ import {
   Layers,
   Table,
   Eye,
+  EyeOff,
+  Map as MapIcon,
   Search,
   Code,
   Download,
@@ -301,6 +303,8 @@ const ERDCanvasInner: React.FC = () => {
   const openDDLModal = useERDStore((state) => state.openDDLModal);
   const openExportModal = useERDStore((state) => state.openExportModal);
   const openPrintPreview = useERDStore((state) => state.openPrintPreview);
+  const showMiniMap = useERDStore((state) => state.showMiniMap);
+  const toggleMiniMap = useERDStore((state) => state.toggleMiniMap);
 
   const [contextMenu, setContextMenu] = useState<{
     x: number;
@@ -1007,19 +1011,51 @@ const ERDCanvasInner: React.FC = () => {
       >
         <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#313244" />
         <Controls position="bottom-right" style={{ marginRight: 20, marginBottom: 20 }} />
-        <MiniMap
-          position="bottom-left"
-          style={{ marginBottom: 20 }}
-          nodeColor={(n) => {
-            if (n.type === 'tableNode') return '#89b4fa';
-            if (n.type === 'viewNode') return '#a6e3a1';
-            if (n.type === 'categoryNode') return '#cba6f7';
-            return '#fde047';
-          }}
-          maskColor="rgba(30, 30, 46, 0.7)"
-        />
+        {showMiniMap && (
+          <MiniMap
+            position="bottom-left"
+            style={{ marginBottom: 46 }}
+            nodeColor={(n) => {
+              if (n.type === 'tableNode') return '#89b4fa';
+              if (n.type === 'viewNode') return '#a6e3a1';
+              if (n.type === 'categoryNode') return '#cba6f7';
+              return '#fde047';
+            }}
+            maskColor="rgba(30, 30, 46, 0.7)"
+          />
+        )}
       </ReactFlow>
       <CanvasScrollbars nodes={nodes} containerRef={canvasContainerRef} />
+
+      {/* MiniMap Toggle Button (Bottom-Left) */}
+      <button
+        type="button"
+        className="no-print"
+        onClick={toggleMiniMap}
+        title={showMiniMap ? t('miniMapHideBtn') : t('miniMapShowBtn')}
+        style={{
+          position: 'absolute',
+          left: 15,
+          bottom: 18,
+          zIndex: 45,
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '5px',
+          padding: '4px 9px',
+          borderRadius: '6px',
+          backgroundColor: 'rgba(30, 30, 46, 0.88)',
+          backdropFilter: 'blur(6px)',
+          border: '1px solid rgba(69, 71, 90, 0.85)',
+          color: '#cdd6f4',
+          fontSize: '11px',
+          fontWeight: 600,
+          cursor: 'pointer',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
+        }}
+      >
+        {showMiniMap ? <EyeOff size={12} color="#a6adc8" /> : <MapIcon size={12} color="#89b4fa" />}
+        <span>{showMiniMap ? t('miniMapHideBtn') : t('miniMapShowBtn')}</span>
+      </button>
 
       {/* Diagram Element Count HUD */}
       <div

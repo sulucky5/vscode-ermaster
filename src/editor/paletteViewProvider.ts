@@ -20,6 +20,7 @@ export interface PaletteState {
   tableWidthMode?: 'auto' | 'fixed';
   tableFixedWidth?: number;
   isOutlineOpen?: boolean;
+  showMiniMap?: boolean;
   selectedCount?: number;
 }
 

@@ -237,6 +237,7 @@ class ERMEditorProvider {
                         tableWidthMode: message.tableWidthMode === 'fixed' ? 'fixed' : 'auto',
                         tableFixedWidth: typeof message.tableFixedWidth === 'number' ? message.tableFixedWidth : 240,
                         isOutlineOpen: Boolean(message.isOutlineOpen),
+                        showMiniMap: message.showMiniMap !== false,
                         selectedCount: typeof message.selectedCount === 'number' ? message.selectedCount : 0
                     });
                     if (this.activePanel === webviewPanel || !this.activePanel) {

@@ -32,6 +32,7 @@ export const App: React.FC = () => {
   const relationSourceId = useERDStore((state) => state.relationSourceId);
   const edgeRoutingType = useERDStore((state) => state.edgeRoutingType);
   const isOutlineOpen = useERDStore((state) => state.isOutlineOpen);
+  const showMiniMap = useERDStore((state) => state.showMiniMap);
   const selectedCount = useERDStore((state) => state.selectedNodeIds.length);
   const lockEdit = Boolean(diagram.lockEdit);
 
@@ -120,6 +121,9 @@ export const App: React.FC = () => {
               break;
             case 'toggleOutline':
               store.toggleOutline();
+              break;
+            case 'setShowMiniMap':
+              store.setShowMiniMap(Boolean(message.value));
               break;
             case 'print':
               store.openPrintPreview();
@@ -230,6 +234,7 @@ export const App: React.FC = () => {
       tableWidthMode: diagram.tableWidthMode || 'auto',
       tableFixedWidth: diagram.tableFixedWidth ?? 240,
       isOutlineOpen,
+      showMiniMap,
       selectedCount
     });
   }, [
@@ -249,6 +254,7 @@ export const App: React.FC = () => {
     diagram.tableFixedWidth,
     edgeRoutingType,
     isOutlineOpen,
+    showMiniMap,
     selectedCount
   ]);
 

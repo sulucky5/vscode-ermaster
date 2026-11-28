@@ -54,6 +54,7 @@ interface PaletteViewState {
   tableWidthMode: 'auto' | 'fixed';
   tableFixedWidth: number;
   isOutlineOpen: boolean;
+  showMiniMap: boolean;
   selectedCount: number;
 }
 
@@ -240,6 +241,7 @@ export const Palette: React.FC<{ section?: SidebarTab }> = ({ section = 'tools' 
     tableWidthMode: 'auto',
     tableFixedWidth: 240,
     isOutlineOpen: false,
+    showMiniMap: true,
     selectedCount: 0
   });
 
@@ -265,6 +267,7 @@ export const Palette: React.FC<{ section?: SidebarTab }> = ({ section = 'tools' 
           tableWidthMode: message.tableWidthMode === 'fixed' ? 'fixed' : 'auto',
           tableFixedWidth: typeof message.tableFixedWidth === 'number' ? message.tableFixedWidth : 240,
           isOutlineOpen: Boolean(message.isOutlineOpen),
+          showMiniMap: message.showMiniMap !== false,
           selectedCount: typeof message.selectedCount === 'number' ? message.selectedCount : 0
         });
       }
@@ -809,6 +812,54 @@ export const Palette: React.FC<{ section?: SidebarTab }> = ({ section = 'tools' 
                     </span>
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* MiniMap Show / Hide */}
+            <div>
+              <div style={sectionLabelStyle}>{t('sectionMiniMap')}</div>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '4px',
+                  padding: '3px',
+                  borderRadius: '6px',
+                  backgroundColor: 'var(--vscode-input-background, var(--bg-tertiary))',
+                  border: '1px solid var(--vscode-panel-border, var(--border-color))'
+                }}
+              >
+                {([true, false] as const).map((visible) => {
+                  const active = state.showMiniMap === visible;
+                  return (
+                    <button
+                      key={String(visible)}
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => {
+                        setState((prev) => ({ ...prev, showMiniMap: visible }));
+                        sendAction('setShowMiniMap', visible);
+                      }}
+                      style={{
+                        padding: '5px 4px',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        cursor: disabled ? 'not-allowed' : 'pointer',
+                        backgroundColor: active
+                          ? 'var(--vscode-button-background, var(--accent-primary))'
+                          : 'transparent',
+                        color: active
+                          ? 'var(--vscode-button-foreground, #11111b)'
+                          : 'var(--vscode-foreground, var(--text-secondary))',
+                        opacity: disabled ? 0.45 : 1
+                      }}
+                    >
+                      {visible ? t('miniMapShow') : t('miniMapHide')}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
